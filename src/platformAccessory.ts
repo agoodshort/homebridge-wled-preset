@@ -1,6 +1,9 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
 import { ExampleHomebridgePlatform } from './platform';
+import { request, RequestOptions } from 'http';
+import { parseString } from 'xml2js';
+
 
 /**
  * Platform Accessory
@@ -16,7 +19,7 @@ export class ExamplePlatformAccessory {
    */
   private exampleStates = {
     On: false,
-    Brightness: 100,
+    Brightness: 50,
   };
 
   constructor(
@@ -48,7 +51,8 @@ export class ExamplePlatformAccessory {
 
     // register handlers for the Brightness Characteristic
     this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-      .on('set', this.setBrightness.bind(this));       // SET - bind to the 'setBrightness` method below
+      .on('set', this.setBrightness.bind(this))       // SET - bind to the 'setBrightness` method below
+      .on('get', this.getBrightness.bind(this));       // GET - bind to the 'GetBrightness` method below
 
 
     /**
@@ -63,11 +67,11 @@ export class ExamplePlatformAccessory {
      */
 
     // Example: add two "motion sensor" services to the accessory
-    const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
+    // const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
+    //   this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
 
-    const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
+    // const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
+    //   this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
 
     /**
      * Updating characteristics values asynchronously.
@@ -78,18 +82,18 @@ export class ExamplePlatformAccessory {
      * the `updateCharacteristic` method.
      * 
      */
-    let motionDetected = false;
-    setInterval(() => {
-      // EXAMPLE - inverse the trigger
-      motionDetected = !motionDetected;
+    // let motionDetected = false;
+    // setInterval(() => {
+    //   // EXAMPLE - inverse the trigger
+    //   motionDetected = !motionDetected;
 
-      // push the new value to HomeKit
-      motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-      motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
+    //   // push the new value to HomeKit
+    //   motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
+    //   motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
 
-      this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-      this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-    }, 10000);
+    //   this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
+    //   this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
+    // }, 10000);
   }
 
   /**
@@ -101,10 +105,23 @@ export class ExamplePlatformAccessory {
     // implement your own code to turn your device on/off
     this.exampleStates.On = value as boolean;
 
-    this.platform.log.debug('Set Characteristic On ->', value);
-
-    // you must call the callback function
-    callback(null);
+    this.performRequestBrightness(
+      {
+        host: '192.168.1.123',
+        path: '/win&T=' + (+!!value),
+        method: 'GET',
+      },
+    )
+      .then(response => {
+        if (typeof response === 'string'){
+          callback(null);
+          this.platform.log.debug('Set on to ', response);
+        }
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
   }
 
   /**
@@ -123,14 +140,37 @@ export class ExamplePlatformAccessory {
   getOn(callback: CharacteristicGetCallback) {
 
     // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
+    // const isOn = this.exampleStates.On;
 
-    this.platform.log.debug('Get Characteristic On ->', isOn);
+    this.performRequestBrightness(
+      {
+        host: '192.168.1.123',
+        path: '/win',
+        method: 'GET',
+      },
+    )
+      .then(response => {
+        if (typeof response === 'string'){
+          if (response === '["0"]') {
+            callback(null, false);
+            this.platform.log.debug('WLED is off');
+          } else {
+            callback(null, true);
+            this.platform.log.debug('WLED is on');
+          }
+        }
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
+
+    // this.platform.log.debug('Get Characteristic On ->', isOn);
 
     // you must call the callback function
     // the first argument should be null if there were no errors
     // the second argument should be the value to return
-    callback(null, isOn);
+    // callback(null, isOn);
   }
 
   /**
@@ -140,12 +180,136 @@ export class ExamplePlatformAccessory {
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
 
     // implement your own code to set the brightness
-    this.exampleStates.Brightness = value as number;
+    // this.exampleStates.Brightness = value as number;
 
-    this.platform.log.debug('Set Characteristic Brightness -> ', value);
-
-    // you must call the callback function
-    callback(null);
+    this.performRequestBrightness(
+      {
+        host: '192.168.1.123',
+        path: '/win&A=' + value,
+        method: 'GET',
+      },
+    )
+      .then(() => {
+        callback(null);
+        this.platform.log.debug('Set Brightness -> ', value);
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
   }
 
+  /**
+   * Get request for brightness
+   * 
+   */
+  getBrightness(callback: CharacteristicSetCallback) {
+
+    this.performRequestBrightness(
+      {
+        host: '192.168.1.123',
+        path: '/win',
+        method: 'GET',
+      },
+    )
+      .then(response => {
+        if (typeof response === 'string'){
+          const stringValue = response.replace(/\W/gi, '');
+          const value :number = +stringValue;
+          callback(null, value/255*100);
+          this.platform.log.debug('Brightness level is ->', value.toString());
+        }
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
+  }
+
+  /**
+   * Send a HTTP request and returns a promise with a JSON
+   * https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
+   * @param options parameters to use for the HTTP request
+   * 
+   * @example
+  //  performRequest(
+  //    {
+  //      host: 'jsonplaceholder.typicode.com',
+  //      path: '/todos1',
+  //      method: 'GET',
+  //     },
+  //     )
+  //     .then(response => {
+  //       this.platform.log.debug(response);
+  //     })
+  //     .catch(error => {
+  //       this.platform.log.debug(error);
+  //     });
+   */
+
+  performRequestBrightness(options :RequestOptions) {
+    return new Promise((resolve, reject) => {
+      request(
+        options,
+        (response) => {
+          const { statusCode } = response;
+          if (statusCode) {
+            if (statusCode >= 300) {
+              reject(
+                new Error(response.statusMessage),
+              );
+            }
+          }
+          const chunks :Uint8Array[] = [];
+          response.on('data', (chunk) => {
+            chunks.push(chunk);
+          });
+          response.on('end', () => {
+            const resultXML = Buffer.concat(chunks).toString();
+            parseString(resultXML, (err, result) => {
+              if (err) {
+                throw err;
+              }
+              const json = JSON.stringify(result.vs.ac);
+              resolve(json);
+            });
+          });
+        },
+      )
+        .end();
+    });
+  }
+
+  performRequestPreset(options :RequestOptions) {
+    return new Promise((resolve, reject) => {
+      request(
+        options,
+        (response) => {
+          const { statusCode } = response;
+          if (statusCode) {
+            if (statusCode >= 300) {
+              reject(
+                new Error(response.statusMessage),
+              );
+            }
+          }
+          const chunks :Uint8Array[] = [];
+          response.on('data', (chunk) => {
+            chunks.push(chunk);
+          });
+          response.on('end', () => {
+            const resultXML = Buffer.concat(chunks).toString();
+            parseString(resultXML, (err, result) => {
+              if (err) {
+                throw err;
+              }
+              const json = JSON.stringify(result.vs.ps);
+              resolve(json);
+            });
+          });
+        },
+      )
+        .end();
+    });
+  }
 }
