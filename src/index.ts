@@ -2,7 +2,6 @@ import {
   AccessoryConfig,
   AccessoryPlugin,
   API,
-  CharacteristicEventTypes,
   CharacteristicGetCallback,
   CharacteristicSetCallback,
   CharacteristicValue,
@@ -45,10 +44,10 @@ let hap: HAP;
  */
 export = (api: API) => {
   hap = api.hap;
-  api.registerAccessory('ExampleSwitch', ExampleSwitch);
+  api.registerAccessory('ExampleSwitch', WledPreset);
 };
 
-class ExampleSwitch implements AccessoryPlugin {
+class WledPreset implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
@@ -57,7 +56,7 @@ class ExampleSwitch implements AccessoryPlugin {
   private readonly service: Service;
   private readonly informationService: Service;
 
-  constructor(log: Logging, config: AccessoryConfig, api: API) {
+  constructor(log: Logging, config: AccessoryConfig) {
     this.log = log;
     this.name = config.name;
 
