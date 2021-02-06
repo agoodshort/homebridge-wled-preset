@@ -10,6 +10,11 @@
         "type": "string",
         "required": true,
         "default": "WLED Preset"
+      },
+      "ip": {
+        "title": "IP",
+        "type": "string",
+        "required": true
       }
     }
   }
