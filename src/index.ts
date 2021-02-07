@@ -10,6 +10,8 @@ import {
   Service,
 } from 'homebridge';
 
+import { ACCESSORY_NAME, PLUGIN_NAME } from './settings';
+
 import { request, RequestOptions } from 'http';
 import { parseString } from 'xml2js';
 
@@ -44,21 +46,29 @@ let hap: HAP;
  */
 export = (api: API) => {
   hap = api.hap;
-  api.registerAccessory('ExampleSwitch', WledPreset);
+  api.registerAccessory(PLUGIN_NAME, ACCESSORY_NAME, WledPreset);
 };
 
 class WledPreset implements AccessoryPlugin {
 
   private readonly log: Logging;
   private readonly name: string;
+  private readonly ip;
   private switchOn = false;
 
   private readonly service: Service;
   private readonly informationService: Service;
+  config: AccessoryConfig;
 
   constructor(log: Logging, config: AccessoryConfig) {
     this.log = log;
     this.name = config.name;
+    this.ip = config.ip;
+    this.config = config;
+
+    if (!this.config.ip) {
+      throw new Error('You must provide an ip address of the vacuum cleaner.');
+    }
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
@@ -108,7 +118,7 @@ class WledPreset implements AccessoryPlugin {
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.performRequestBrightness(
       {
-        host: '192.168.1.123',
+        host: this.ip,
         path: '/win&T=' + (+!!value),
         method: 'GET',
       },
@@ -145,7 +155,7 @@ class WledPreset implements AccessoryPlugin {
     
     this.performRequestBrightness(
       {
-        host: '192.168.1.123',
+        host: this.ip,
         path: '/win',
         method: 'GET',
       },
@@ -178,7 +188,7 @@ class WledPreset implements AccessoryPlugin {
     
     this.performRequestBrightness(
       {
-        host: '192.168.1.123',
+        host: this.ip,
         path: '/win&A=' + value,
         method: 'GET',
       },
@@ -201,7 +211,7 @@ class WledPreset implements AccessoryPlugin {
     
     this.performRequestBrightness(
       {
-        host: '192.168.1.123',
+        host: this.ip,
         path: '/win',
         method: 'GET',
       },
