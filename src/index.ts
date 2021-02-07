@@ -56,9 +56,11 @@ class WledPreset implements AccessoryPlugin {
   private readonly ip;
   private switchOn = false;
 
-  private readonly service: Service;
+  private readonly lightService: Service;
   private readonly informationService: Service;
-  config: AccessoryConfig;
+  private config: AccessoryConfig;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private presetService: any;
 
   constructor(log: Logging, config: AccessoryConfig) {
     this.log = log;
@@ -67,29 +69,35 @@ class WledPreset implements AccessoryPlugin {
     this.config = config;
 
     if (!this.config.ip) {
-      throw new Error('You must provide an ip address of the vacuum cleaner.');
+      throw new Error('You must provide an ip address for ' + this.name);
     }
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
 
     // register handlers for the On/Off Characteristic
-    this.service = new hap.Service.Lightbulb(this.name);
-    this.service.getCharacteristic(hap.Characteristic.On)
+    this.lightService = new hap.Service.Lightbulb(this.name);
+    this.lightService.getCharacteristic(hap.Characteristic.On)
       .on('set', this.setOn.bind(this))                // SET - bind to the `setOn` method below
       .on('get', this.getOn.bind(this));               // GET - bind to the `getOn` method below
 
     // register handlers for the Brightness Characteristic
-    this.service.getCharacteristic(hap.Characteristic.Brightness)
+    this.lightService.getCharacteristic(hap.Characteristic.Brightness)
       .on('set', this.setBrightness.bind(this))        // SET - bind to the 'setBrightness` method below
       .on('get', this.getBrightness.bind(this));       // GET - bind to the 'GetBrightness` method below
 
+    // Add switches for presets
+    this.presetService = new hap.Service.Television(this.name, 'Preset');
+
+    // this.registerCharacteristicActive();
+    // this.registerCharacteristicActiveIdentifier();
+    // this.addEffectsInputSources(wledConfig.effects);
 
     this.informationService = new hap.Service.AccessoryInformation()
-      .setCharacteristic(hap.Characteristic.Manufacturer, 'Custom Manufacturer')
-      .setCharacteristic(hap.Characteristic.Model, 'Custom Model');
+      .setCharacteristic(hap.Characteristic.Manufacturer, 'Aircoookie')
+      .setCharacteristic(hap.Characteristic.Model, 'WLED');
 
-    log.info('Switch finished initializing!');
+    log.info(ACCESSORY_NAME, 'finished initializing!');
   }
 
   /*
@@ -107,7 +115,7 @@ class WledPreset implements AccessoryPlugin {
   getServices(): Service[] {
     return [
       this.informationService,
-      this.service,
+      this.lightService,
     ];
   }
 
