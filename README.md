@@ -1,7 +1,7 @@
 
 <p align="center">
 
-<img src="https://www.clipartmax.com/png/middle/265-2655834_work-in-progress-icon.png" width="150">
+<img src="https://github.com/goodshort/homebridge-wled-preset/blob/master/WIP.png" width="150">
 
 </p>
 
