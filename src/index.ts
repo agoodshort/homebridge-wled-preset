@@ -19,7 +19,7 @@ import { parseString } from 'xml2js';
 /*
  * IMPORTANT NOTICE
  *
- * One thing you need to take care of is, that you never ever ever import anything directly from the "homebridge" module 
+ * One thing you need to take care of is, that you never ever ever import anything directly from the "homebridge" module
  * (or the "hap-nodejs" module).
  * The above import block may seem like, that we do exactly that, but actually those imports are only used for types and interfaces
  * and will disappear once the code is compiled to Javascript.
@@ -55,12 +55,17 @@ class WledPreset implements AccessoryPlugin {
   private readonly name: string;
   private readonly ip;
   private switchOn = false;
+  private lastPlayedEffect = 0;
+
 
   private readonly lightService: Service;
   private readonly informationService: Service;
+  private readonly presetService: Service;
+  private readonly inputService: Service;
+
   private config: AccessoryConfig;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private presetService: any;
+  hdmi1InputService: Service;
+  hdmi2InputService: Service;
 
   constructor(log: Logging, config: AccessoryConfig) {
     this.log = log;
@@ -87,11 +92,92 @@ class WledPreset implements AccessoryPlugin {
       .on('get', this.getBrightness.bind(this));       // GET - bind to the 'GetBrightness` method below
 
     // Add switches for presets
-    this.presetService = new hap.Service.Television(this.name, 'Preset');
+    this.presetService = new hap.Service.Television('Preset', '112233');
+    // eslint-disable-next-line max-len
+    this.presetService.setCharacteristic(hap.Characteristic.SleepDiscoveryMode, hap.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE); // Set sleep discovery characteristics
 
-    // this.registerCharacteristicActive();
-    // this.registerCharacteristicActiveIdentifier();
-    // this.addEffectsInputSources(wledConfig.effects);
+    // handle on / off events using the Active characteristic
+    this.presetService.getCharacteristic(hap.Characteristic.Active)
+      .on('set', (newValue, callback) => {
+        this.setOn(newValue, callback);
+      });
+
+    this.presetService.setCharacteristic(hap.Characteristic.ActiveIdentifier, this.lastPlayedEffect);
+
+    // handle input source changes
+    this.presetService.getCharacteristic(hap.Characteristic.ActiveIdentifier)
+      .on('set', (newValue, callback) => {
+
+        // the value will be the value you set for the Identifier Characteristic
+        // on the Input Source service that was selected - see input sources below.
+
+        this.performRequestPreset(
+          {
+            host: this.ip,
+            path: '/win',
+            method: 'GET',
+          },
+        )
+          .then(response => {
+            if (typeof response === 'string'){
+              const stringValue = response.replace(/\W/gi, '');
+              const value :number = +stringValue;
+              // callback(null, value/255*100);
+              this.log.debug('Preset is ->', value.toString());
+            }
+          })
+          .catch(error => {
+            callback(error);
+            this.log.debug(error);
+          });
+
+        this.log.info('set Active Identifier => setNewValue: ' + newValue);
+        callback(null);
+      });
+
+    
+    // InputSource
+    this.inputService = new hap.Service.InputSource('Preset', '11223344');
+
+    this.inputService.getCharacteristic(hap.Characteristic.ConfiguredName)
+      .on('get', this.handleConfiguredNameGet.bind(this))
+      .on('set', this.handleConfiguredNameSet.bind(this));
+
+    this.inputService.getCharacteristic(hap.Characteristic.InputSourceType)
+      .on('get', this.handleInputSourceTypeGet.bind(this));
+
+    this.inputService.getCharacteristic(hap.Characteristic.IsConfigured)
+      .on('get', this.handleIsConfiguredGet.bind(this))
+      .on('set', this.handleIsConfiguredSet.bind(this));
+
+    this.inputService.getCharacteristic(hap.Characteristic.Name)
+      .on('get', this.handleNameGet.bind(this));
+
+    this.inputService.getCharacteristic(hap.Characteristic.CurrentVisibilityState)
+      .on('get', this.handleCurrentVisibilityStateGet.bind(this));
+
+    this.hdmi1InputService = new hap.Service.InputSource('hdmi1', 'HDMI 1');
+    this.hdmi1InputService
+      .setCharacteristic(hap.Characteristic.Identifier, 1)
+      .setCharacteristic(hap.Characteristic.ConfiguredName, 'HDMI 1')
+      .setCharacteristic(hap.Characteristic.IsConfigured, hap.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(hap.Characteristic.InputSourceType, hap.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(this.hdmi1InputService); // link to tv service
+
+    this.inputService.addLinkedService(this.hdmi1InputService);
+
+
+    this.hdmi2InputService = new hap.Service.InputSource('hdmi2', 'HDMI 2');
+    this.hdmi2InputService
+      .setCharacteristic(hap.Characteristic.Identifier, 2)
+      .setCharacteristic(hap.Characteristic.ConfiguredName, 'HDMI 2')
+      .setCharacteristic(hap.Characteristic.IsConfigured, hap.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(hap.Characteristic.InputSourceType, hap.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(this.hdmi2InputService); // link to tv service
+
+    this.inputService.addLinkedService(this.hdmi2InputService);
+
+    // Information Service
 
     this.informationService = new hap.Service.AccessoryInformation()
       .setCharacteristic(hap.Characteristic.Manufacturer, 'Aircoookie')
@@ -105,7 +191,7 @@ class WledPreset implements AccessoryPlugin {
    * Typical this only ever happens at the pairing process.
    */
   identify(): void {
-    this.log('Identify!');
+    this.log('Identify is not doing anything at the moment...');
   }
 
   /*
@@ -115,7 +201,11 @@ class WledPreset implements AccessoryPlugin {
   getServices(): Service[] {
     return [
       this.informationService,
+      this.presetService,
       this.lightService,
+      this.inputService,
+      this.hdmi1InputService,
+      this.hdmi2InputService,
     ];
   }
 
@@ -142,25 +232,25 @@ class WledPreset implements AccessoryPlugin {
         this.log.debug(error);
       });
   }
-    
+
   /**
          * Handle the "GET" requests from HomeKit
          * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
-         * 
+         *
          * GET requests should return as fast as possbile. A long delay here will result in
          * HomeKit being unresponsive and a bad user experience in general.
-         * 
+         *
          * If your device takes time to respond you should update the status of your device
          * asynchronously instead using the `updateCharacteristic` method instead.
-    
+
          * @example
          * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
          */
   getOn(callback: CharacteristicGetCallback) {
-    
+
     // implement your own code to check if the device is on
     // const isOn = this.exampleStates.On;
-    
+
     this.performRequestBrightness(
       {
         host: this.ip,
@@ -184,16 +274,16 @@ class WledPreset implements AccessoryPlugin {
         this.log.debug(error);
       });
   }
-    
+
   /**
          * Handle "SET" requests from HomeKit
          * These are sent when the user changes the state of an accessory, for example, changing the Brightness
          */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    
+
     // implement your own code to set the brightness
     // this.exampleStates.Brightness = value as number;
-    
+
     this.performRequestBrightness(
       {
         host: this.ip,
@@ -210,13 +300,13 @@ class WledPreset implements AccessoryPlugin {
         this.log.debug(error);
       });
   }
-    
+
   /**
          * Get request for brightness
-         * 
+         *
          */
   getBrightness(callback: CharacteristicSetCallback) {
-    
+
     this.performRequestBrightness(
       {
         host: this.ip,
@@ -237,12 +327,101 @@ class WledPreset implements AccessoryPlugin {
         this.log.debug(error);
       });
   }
-    
+
+
+  /**  
+   * InputSource function
+   */
+
+  /**
+   * Handle requests to get the current value of the "Configured Name" characteristic
+   */
+  handleConfiguredNameGet(callback) {
+    this.log.debug('Triggered GET ConfiguredName');
+
+    // set this to a valid value for ConfiguredName
+    const currentValue = 1;
+
+    callback(null, currentValue);
+  }
+
+  /**
+   * Handle requests to set the "Configured Name" characteristic
+   */
+  handleConfiguredNameSet(value, callback) {
+    this.log.debug('Triggered SET ConfiguredName:', value);
+
+    callback(null);
+  }
+
+  /**
+   * Handle requests to get the current value of the "Input Source Type" characteristic
+   */
+  handleInputSourceTypeGet(callback) {
+    this.log.debug('Triggered GET InputSourceType');
+
+    // set this to a valid value for InputSourceType
+    const currentValue = 1;
+
+    callback(null, currentValue);
+  }
+
+  /**
+   * Handle requests to get the current value of the "Is Configured" characteristic
+   */
+  handleIsConfiguredGet(callback) {
+    this.log.debug('Triggered GET IsConfigured');
+
+    // set this to a valid value for IsConfigured
+    const currentValue = 1;
+
+    callback(null, currentValue);
+  }
+
+  /**
+   * Handle requests to set the "Is Configured" characteristic
+   */
+  handleIsConfiguredSet(value, callback) {
+    this.log.debug('Triggered SET IsConfigured:', value);
+
+    callback(null);
+  }
+
+  /**
+   * Handle requests to get the current value of the "Name" characteristic
+   */
+  handleNameGet(callback) {
+    this.log.debug('Triggered GET Name');
+
+    // set this to a valid value for Name
+    const currentValue = 1;
+
+    callback(null, currentValue);
+  }
+
+
+  /**
+   * Handle requests to get the current value of the "Current Visibility State" characteristic
+   */
+  handleCurrentVisibilityStateGet(callback) {
+    this.log.debug('Triggered GET CurrentVisibilityState');
+
+    // set this to a valid value for CurrentVisibilityState
+    const currentValue = 1;
+
+    callback(null, currentValue);
+  }
+
+
+  // ============================================================================================================
+
+
   /**
          * Send a HTTP request and returns a promise with a JSON
-         * https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
+         * workflow from: https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
+         * Response JSON mapping: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
          * @param options parameters to use for the HTTP request
-         * 
+         *
          * @example
          *  performRequest(
          *    {
@@ -258,7 +437,7 @@ class WledPreset implements AccessoryPlugin {
          *       this.platform.log.debug(error);
          *     });
          */
-    
+
   performRequestBrightness(options :RequestOptions) {
     return new Promise((resolve, reject) => {
       request(
@@ -291,7 +470,7 @@ class WledPreset implements AccessoryPlugin {
         .end();
     });
   }
-    
+
   performRequestPreset(options :RequestOptions) {
     return new Promise((resolve, reject) => {
       request(
@@ -325,4 +504,3 @@ class WledPreset implements AccessoryPlugin {
     });
   }
 }
-
