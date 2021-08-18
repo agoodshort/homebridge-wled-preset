@@ -13,7 +13,7 @@ import { parseString } from 'xml2js';
 export class WledPresetAccessory {
   private service: Service;
   private presetService: Service;
-  private lastPresetUsed = 0;
+  private presetInUse: number | undefined;
 
   constructor(
     private readonly platform: WledPresetPlatform,
@@ -58,13 +58,18 @@ export class WledPresetAccessory {
       this.platform.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE); // Set sleep discovery characteristics
 
     // handle on / off events using the Active characteristic
+    // Allows to turn on / off with the TV button
     this.presetService.getCharacteristic(this.platform.Characteristic.Active)
       .on('set', (newValue, callback) => {
         this.setOn(newValue, callback);
       });
 
-    this.presetService.setCharacteristic(this.platform.Characteristic.ActiveIdentifier, this.lastPresetUsed);
-
+    // Used to set for the first time starting
+    if (this.presetInUse === undefined) {
+      this.presetInUse = 1;
+    }
+    this.presetService.setCharacteristic(this.platform.Characteristic.ActiveIdentifier, this.presetInUse);
+    
     // handle input source changes
     this.presetService.getCharacteristic(this.platform.Characteristic.ActiveIdentifier)
       .on('set', (newValue, callback) => {
@@ -75,7 +80,7 @@ export class WledPresetAccessory {
         this.performRequestPreset(
           {
             host: this.ip,
-            path: '/win',
+            path: '/win&PL=' + newValue,
             method: 'GET',
           },
         )
@@ -83,8 +88,10 @@ export class WledPresetAccessory {
             if (typeof response === 'string'){
               const stringValue = response.replace(/\W/gi, '');
               const value :number = +stringValue;
-              // callback(null, value/255*100);
-              this.platform.log.debug('Preset is ->', value.toString());
+              this.platform.log.info('Trying to set Preset to -> ', newValue.toString());
+              this.platform.log.debug('Preset is -> ', value.toString());
+              this.presetInUse = value;
+              callback(null);
             }
           })
           .catch(error => {
@@ -92,46 +99,54 @@ export class WledPresetAccessory {
             this.platform.log.debug(error);
           });
 
-        this.platform.log.debug('set Active Identifier ->' + newValue);
-        callback(null);
+        // this.platform.log.debug('set Active Identifier -> ' + newValue);
+
+        // this.performRequestPreset(
+        //   {
+        //     host: this.ip,
+        //     path: '/win&PL=' + (+!!newValue),
+        //     method: 'GET',
+        //   },
+        // )
+        //   .then(response => {
+        //     if (typeof response === 'string'){
+        //       callback(null);
+        //       this.platform.log.info('Trying to set Preset to -> ', newValue.toString());
+        //       this.platform.log.info('Set Preset response -> ', response.toString());
+        //     }
+        //   })
+        //   .catch(error => {
+        //     callback(error);
+        //     this.platform.log.debug(error);
+        //   });
       });
 
-    const effectInputSource = this.accessory.getService('p0') || 
-    this.accessory.addService(this.platform.Service.InputSource, 'p0', 'Preset 0');
-    effectInputSource
-      .setCharacteristic(this.platform.Characteristic.Identifier, 0)
-      .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 0')
-      .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
-      .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
-    this.presetService.addLinkedService(effectInputSource);
-
-    const effectInputSource2 = this.accessory.getService('p1') || 
+    const effectInputSource = this.accessory.getService('p1') || 
     this.accessory.addService(this.platform.Service.InputSource, 'p1', 'Preset 1');
-    effectInputSource2
+    effectInputSource
       .setCharacteristic(this.platform.Characteristic.Identifier, 1)
       .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 1')
       .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
       .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(effectInputSource);
+
+    const effectInputSource2 = this.accessory.getService('p2') || 
+    this.accessory.addService(this.platform.Service.InputSource, 'p2', 'Preset 2');
+    effectInputSource2
+      .setCharacteristic(this.platform.Characteristic.Identifier, 2)
+      .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 2')
+      .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
     this.presetService.addLinkedService(effectInputSource2); 
 
-
-    /**
-     * Creating multiple services of the same type.
-     * 
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     * 
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same sub type id.)
-     */
-
-    // Example: add two "motion sensor" services to the accessory
-    // const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-    //   this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
-
-    // const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-    //   this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
+    const effectInputSource3 = this.accessory.getService('p3') || 
+    this.accessory.addService(this.platform.Service.InputSource, 'p3', 'Preset 3');
+    effectInputSource3
+      .setCharacteristic(this.platform.Characteristic.Identifier, 3)
+      .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 3')
+      .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(effectInputSource3); 
 
     /**
      * Updating characteristics values asynchronously.
@@ -165,7 +180,7 @@ export class WledPresetAccessory {
     this.performRequestBrightness(
       {
         host: this.ip,
-        path: '/win&T=' + (+!!value),
+        path: '/win&T=' + (+!!value), // Why +!! 
         method: 'GET',
       },
     )
@@ -222,7 +237,7 @@ export class WledPresetAccessory {
 
   /**
    * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
+   * These are sent when the user changes the state of the accessory (i.e. changing the Brightness)
    */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
 
@@ -246,7 +261,6 @@ export class WledPresetAccessory {
   /**
    * Handle "GET" requests from HomeKit for Brightness
    */
-
   getBrightness(callback: CharacteristicSetCallback) {
 
     this.performRequestBrightness(
