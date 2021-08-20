@@ -8,7 +8,7 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "WLED Preset"
+        "default": "Office LED"
       },
       "ip": {
         "title": "IP",
