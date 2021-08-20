@@ -58,7 +58,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
       {
         ip: this.config.ip as string,
         presetNames: this.config.presetNames as Record<number, unknown>,
-        exampleDisplayName: 'Office',
+        displayName: this.config.name as string,
       },
     //   {
     //     exampleUniqueId: 'EFGH',
@@ -101,10 +101,10 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
         }
       } else {
         // the accessory does not yet exist, so we need to create it
-        this.log.info('Adding new accessory:', device.exampleDisplayName);
+        this.log.info('Adding new accessory:', device.displayName);
 
         // create a new accessory
-        const accessory = new this.api.platformAccessory(device.exampleDisplayName, uuid);
+        const accessory = new this.api.platformAccessory(device.displayName, uuid);
 
         // store a copy of the device object in the `accessory.context`
         // the `context` property can be used to store any data about the accessory you may need
