@@ -19,6 +19,7 @@ export class WledPresetAccessory {
     private readonly platform: WledPresetPlatform,
     private readonly accessory: PlatformAccessory,
     private readonly ip: string,
+    private readonly presetNames: Record<string, unknown>,
   ) {
 
     // set accessory information
