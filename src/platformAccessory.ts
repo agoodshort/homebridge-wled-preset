@@ -1,33 +1,31 @@
 import { Service, PlatformAccessory, CharacteristicValue, CharacteristicSetCallback, CharacteristicGetCallback } from 'homebridge';
 
-import { ExampleHomebridgePlatform } from './platform';
+import { WledPresetPlatform } from './platform';
+
+import { request, RequestOptions } from 'http';
+import { parseString } from 'xml2js';
 
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class ExamplePlatformAccessory {
+export class WledPresetAccessory {
   private service: Service;
-
-  /**
-   * These are just used to create a working example
-   * You should implement your own code to track the state of your accessory
-   */
-  private exampleStates = {
-    On: false,
-    Brightness: 100,
-  };
+  private presetService: Service;
+  private presetInUse: number | undefined;
 
   constructor(
-    private readonly platform: ExampleHomebridgePlatform,
+    private readonly platform: WledPresetPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly ip: string,
+    private readonly presetNames: Record<string, unknown>,
   ) {
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
-      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
-      .setCharacteristic(this.platform.Characteristic.Model, 'Default-Model')
+      .setCharacteristic(this.platform.Characteristic.Manufacturer, 'AirCookie')
+      .setCharacteristic(this.platform.Characteristic.Model, 'WLED')
       .setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial');
 
     // get the LightBulb service if it exists, otherwise create a new LightBulb service
@@ -36,7 +34,7 @@ export class ExamplePlatformAccessory {
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.exampleDisplayName);
+    this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.displayName);
 
     // each service must implement at-minimum the "required characteristics" for the given service type
     // see https://developers.homebridge.io/#/service/Lightbulb
@@ -48,26 +46,108 @@ export class ExamplePlatformAccessory {
 
     // register handlers for the Brightness Characteristic
     this.service.getCharacteristic(this.platform.Characteristic.Brightness)
-      .on('set', this.setBrightness.bind(this));       // SET - bind to the 'setBrightness` method below
+      .on('set', this.setBrightness.bind(this))        // SET - bind to the 'setBrightness` method below
+      .on('get', this.getBrightness.bind(this));       // GET - bind to the 'GetBrightness` method below
 
 
-    /**
-     * Creating multiple services of the same type.
-     * 
-     * To avoid "Cannot add a Service with the same UUID another Service without also defining a unique 'subtype' property." error,
-     * when creating multiple services of the same type, you need to use the following syntax to specify a name and subtype id:
-     * this.accessory.getService('NAME') || this.accessory.addService(this.platform.Service.Lightbulb, 'NAME', 'USER_DEFINED_SUBTYPE_ID');
-     * 
-     * The USER_DEFINED_SUBTYPE must be unique to the platform accessory (if you platform exposes multiple accessories, each accessory
-     * can use the same sub type id.)
-     */
+    // Preset Television
+    this.presetService = this.accessory.getService(this.platform.Service.Television) ||
+    this.accessory.addService(this.platform.Service.Television);
+    this.presetService.setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Effects');
 
-    // Example: add two "motion sensor" services to the accessory
-    const motionSensorOneService = this.accessory.getService('Motion Sensor One Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor One Name', 'YourUniqueIdentifier-1');
+    this.presetService.setCharacteristic(this.platform.Characteristic.SleepDiscoveryMode,
+      this.platform.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE); // Set sleep discovery characteristics
 
-    const motionSensorTwoService = this.accessory.getService('Motion Sensor Two Name') ||
-      this.accessory.addService(this.platform.Service.MotionSensor, 'Motion Sensor Two Name', 'YourUniqueIdentifier-2');
+    // handle on / off events using the Active characteristic
+    // Allows to turn on / off with the TV button
+    this.presetService.getCharacteristic(this.platform.Characteristic.Active)
+      .on('set', (newValue, callback) => {
+        this.setOn(newValue, callback);
+      });
+
+    // Used to set for the first time starting
+    if (this.presetInUse === undefined) {
+      this.presetInUse = 1;
+    }
+    this.presetService.setCharacteristic(this.platform.Characteristic.ActiveIdentifier, this.presetInUse);
+    
+    // handle input source changes
+    this.presetService.getCharacteristic(this.platform.Characteristic.ActiveIdentifier)
+      .on('set', (newValue, callback) => {
+
+        // the value will be the value you set for the Identifier Characteristic
+        // on the Input Source service that was selected - see input sources below.
+
+        this.performRequestPreset(
+          {
+            host: this.ip,
+            path: '/win&PL=' + newValue,
+            method: 'GET',
+          },
+        )
+          .then(response => {
+            if (typeof response === 'string'){
+              const stringValue = response.replace(/\W/gi, '');
+              const value :number = +stringValue;
+              this.platform.log.info('Trying to set Preset to -> ', newValue.toString());
+              this.platform.log.debug('Preset is -> ', value.toString());
+              this.presetInUse = value;
+              callback(null);
+            }
+          })
+          .catch(error => {
+            callback(error);
+            this.platform.log.debug(error);
+          });
+
+        // this.platform.log.debug('set Active Identifier -> ' + newValue);
+
+        // this.performRequestPreset(
+        //   {
+        //     host: this.ip,
+        //     path: '/win&PL=' + (+!!newValue),
+        //     method: 'GET',
+        //   },
+        // )
+        //   .then(response => {
+        //     if (typeof response === 'string'){
+        //       callback(null);
+        //       this.platform.log.info('Trying to set Preset to -> ', newValue.toString());
+        //       this.platform.log.info('Set Preset response -> ', response.toString());
+        //     }
+        //   })
+        //   .catch(error => {
+        //     callback(error);
+        //     this.platform.log.debug(error);
+        //   });
+      });
+
+    const effectInputSource = this.accessory.getService('p1') || 
+    this.accessory.addService(this.platform.Service.InputSource, 'p1', 'Preset 1');
+    effectInputSource
+      .setCharacteristic(this.platform.Characteristic.Identifier, 1)
+      .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 1')
+      .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(effectInputSource);
+
+    const effectInputSource2 = this.accessory.getService('p2') || 
+    this.accessory.addService(this.platform.Service.InputSource, 'p2', 'Preset 2');
+    effectInputSource2
+      .setCharacteristic(this.platform.Characteristic.Identifier, 2)
+      .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 2')
+      .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(effectInputSource2); 
+
+    const effectInputSource3 = this.accessory.getService('p3') || 
+    this.accessory.addService(this.platform.Service.InputSource, 'p3', 'Preset 3');
+    effectInputSource3
+      .setCharacteristic(this.platform.Characteristic.Identifier, 3)
+      .setCharacteristic(this.platform.Characteristic.ConfiguredName, 'Preset 3')
+      .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+      .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+    this.presetService.addLinkedService(effectInputSource3); 
 
     /**
      * Updating characteristics values asynchronously.
@@ -78,18 +158,18 @@ export class ExamplePlatformAccessory {
      * the `updateCharacteristic` method.
      * 
      */
-    let motionDetected = false;
-    setInterval(() => {
-      // EXAMPLE - inverse the trigger
-      motionDetected = !motionDetected;
+    // let motionDetected = false;
+    // setInterval(() => {
+    //   // EXAMPLE - inverse the trigger
+    //   motionDetected = !motionDetected;
 
-      // push the new value to HomeKit
-      motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-      motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
+    //   // push the new value to HomeKit
+    //   motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
+    //   motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
 
-      this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-      this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-    }, 10000);
+    //   this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
+    //   this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
+    // }, 10000);
   }
 
   /**
@@ -98,13 +178,23 @@ export class ExamplePlatformAccessory {
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
 
-    // implement your own code to turn your device on/off
-    this.exampleStates.On = value as boolean;
-
-    this.platform.log.debug('Set Characteristic On ->', value);
-
-    // you must call the callback function
-    callback(null);
+    this.performRequestBrightness(
+      {
+        host: this.ip,
+        path: '/win&T=' + (+!!value), // Why +!! 
+        method: 'GET',
+      },
+    )
+      .then(response => {
+        if (typeof response === 'string'){
+          callback(null);
+          this.platform.log.info('Set on -> Brightness lvl: ', response);
+        }
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
   }
 
   /**
@@ -122,30 +212,169 @@ export class ExamplePlatformAccessory {
    */
   getOn(callback: CharacteristicGetCallback) {
 
-    // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
-
-    this.platform.log.debug('Get Characteristic On ->', isOn);
-
-    // you must call the callback function
-    // the first argument should be null if there were no errors
-    // the second argument should be the value to return
-    callback(null, isOn);
+    this.performRequestBrightness(
+      {
+        host: this.ip,
+        path: '/win',
+        method: 'GET',
+      },
+    )
+      .then(response => {
+        if (typeof response === 'string'){
+          if (response === '["0"]') {
+            callback(null, false);
+            this.platform.log.debug('WLED is off');
+          } else {
+            callback(null, true);
+            this.platform.log.debug('WLED is on');
+          }
+        }
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
   }
 
   /**
    * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, changing the Brightness
+   * These are sent when the user changes the state of the accessory (i.e. changing the Brightness)
    */
   setBrightness(value: CharacteristicValue, callback: CharacteristicSetCallback) {
 
-    // implement your own code to set the brightness
-    this.exampleStates.Brightness = value as number;
-
-    this.platform.log.debug('Set Characteristic Brightness -> ', value);
-
-    // you must call the callback function
-    callback(null);
+    this.performRequestBrightness(
+      {
+        host: this.ip,
+        path: '/win&A=' + value,
+        method: 'GET',
+      },
+    )
+      .then(() => {
+        callback(null);
+        this.platform.log.info('Set Brightness -> ', value);
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
   }
 
+  /**
+   * Handle "GET" requests from HomeKit for Brightness
+   */
+  getBrightness(callback: CharacteristicSetCallback) {
+
+    this.performRequestBrightness(
+      {
+        host: this.ip,
+        path: '/win',
+        method: 'GET',
+      },
+    )
+      .then(response => {
+        if (typeof response === 'string'){
+          const stringValue = response.replace(/\W/gi, '');
+          const value :number = +stringValue;
+          callback(null, value/255*100);
+          this.platform.log.debug('Brightness level is ->', value.toString());
+        }
+      })
+      .catch(error => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
+  }
+
+  /**
+   * ======================================================================
+   * Request methods
+   * ======================================================================
+   */
+  /**
+         * Send a HTTP request and returns a promise with a JSON
+         * workflow from: https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
+         * Response JSON mapping: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
+         * @param options parameters to use for the HTTP request
+         *
+         * @example
+         *  performRequest(
+         *    {
+         *      host: 'jsonplaceholder.typicode.com',
+         *      path: '/todos1',
+         *      method: 'GET',
+         *     },
+         *     )
+         *     .then(response => {
+         *       this.platform.log.debug(response);
+         *     })
+         *     .catch(error => {
+         *       this.platform.log.debug(error);
+         *     });
+         */
+
+  performRequestBrightness(options :RequestOptions) {
+    return new Promise((resolve, reject) => {
+      request(
+        options,
+        (response) => {
+          const { statusCode } = response;
+          if (statusCode) {
+            if (statusCode >= 300) {
+              reject(
+                new Error(response.statusMessage),
+              );
+            }
+          }
+          const chunks :Uint8Array[] = [];
+          response.on('data', (chunk) => {
+            chunks.push(chunk);
+          });
+          response.on('end', () => {
+            const resultXML = Buffer.concat(chunks).toString();
+            parseString(resultXML, (err, result) => {
+              if (err) {
+                throw err;
+              }
+              const json = JSON.stringify(result.vs.ac);
+              resolve(json);
+            });
+          });
+        },
+      )
+        .end();
+    });
+  }
+      
+  performRequestPreset(options :RequestOptions) {
+    return new Promise((resolve, reject) => {
+      request(
+        options,
+        (response) => {
+          const { statusCode } = response;
+          if (statusCode) {
+            if (statusCode >= 300) {
+              reject(
+                new Error(response.statusMessage),
+              );
+            }
+          }
+          const chunks :Uint8Array[] = [];
+          response.on('data', (chunk) => {
+            chunks.push(chunk);
+          });
+          response.on('end', () => {
+            const resultXML = Buffer.concat(chunks).toString();
+            parseString(resultXML, (err, result) => {
+              if (err) {
+                throw err;
+              }
+              const json = JSON.stringify(result.vs.ps);
+              resolve(json);
+            });
+          });
+        },
+      )
+        .end();
+    });
+  }
 }

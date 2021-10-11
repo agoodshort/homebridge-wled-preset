@@ -1,7 +1,6 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "WledPreset",
   "pluginType": "platform",
-  "singular": true,
   "schema": {
     "type": "object",
     "properties": {
@@ -9,7 +8,34 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "Office LED"
+      },
+      "ip": {
+        "title": "IP",
+        "type": "string",
+        "required": true
+      },
+      "presetNames": {
+        "title": "Presets",
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "presetNb": {
+              "title": "Preset ID",
+              "type": "integer",
+              "minimum": 1,
+              "required": true,
+              "description": "The preset ID found in the WLED interface"
+            },
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "placeholder": "Enter preset name...",
+              "description": "The name you would like this preset to be displayed as"
+            }
+          }
+        }
       }
     }
   }
