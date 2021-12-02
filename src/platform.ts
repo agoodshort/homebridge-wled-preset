@@ -64,9 +64,9 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     // or a user-defined array in the platform config.
     const exampleDevices = [
       {
-        ip: this.config.ip as string,
-        presetNames: this.config.presetNames as Record<number, unknown>,
         displayName: this.config.name as string,
+        ip: this.config.ip as string,
+        presetsNb: this.config.presetsNb as number,
       },
       //   {
       //     exampleUniqueId: 'EFGH',
@@ -105,7 +105,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
             this,
             existingAccessory,
             device.ip,
-            device.presetNames,
+            device.presetsNb,
           );
 
           // update accessory cache with any changes to the accessory details and information
@@ -137,7 +137,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new WledPresetAccessory(this, accessory, device.ip, device.presetNames);
+        new WledPresetAccessory(this, accessory, device.ip, device.presetsNb);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
