@@ -8,11 +8,12 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Office LED"
+        "default": "WLED"
       },
       "ip": {
-        "title": "IP",
+        "title": "IP/hostname",
         "type": "string",
+        "placeholder": "Enter IP or hostname...",
         "required": true
       },
       "presetNames": {
@@ -24,6 +25,7 @@
             "presetNb": {
               "title": "Preset ID",
               "type": "integer",
+              "placeholder": "1",
               "minimum": 1,
               "required": true,
               "description": "The preset ID found in the WLED interface"
