@@ -7,37 +7,21 @@
       "name": {
         "title": "Name",
         "type": "string",
-        "required": true,
-        "default": "WLED"
-      },
-      "ip": {
-        "title": "IP/hostname",
-        "type": "string",
-        "placeholder": "Enter IP or hostname...",
+        "default": "WLED",
         "required": true
       },
-      "presetNames": {
-        "title": "Presets",
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "presetNb": {
-              "title": "Preset ID",
-              "type": "integer",
-              "placeholder": "1",
-              "minimum": 1,
-              "required": true,
-              "description": "The preset ID found in the WLED interface"
-            },
-            "name": {
-              "title": "Name",
-              "type": "string",
-              "placeholder": "Enter preset name...",
-              "description": "The name you would like this preset to be displayed as"
-            }
-          }
-        }
+      "ip": {
+        "title": "IP",
+        "type": "string",
+        "placeholder": "Enter IP...",
+        "required": true
+      },
+      "presetsNb": {
+        "title": "Number of presets configured",
+        "type": "number",
+        "placeholder": "Enter amount of presets",
+        "default": "5",
+        "required": true
       }
     }
   }

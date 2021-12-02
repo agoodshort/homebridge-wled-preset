@@ -25,7 +25,7 @@ export class WledPresetAccessory {
     private readonly platform: WledPresetPlatform,
     private readonly accessory: PlatformAccessory,
     private readonly ip: string,
-    private readonly presets: Record<string, unknown>,
+    private readonly presetsNb: number,
   ) {
     // set accessory information
     this.accessory
@@ -159,7 +159,7 @@ export class WledPresetAccessory {
     // Generate existing presets from the WLED interface as inputs
     // If value returned from GET request is different than the one used, the preset ID does not exists
     // The value cannot be higher than 250 based on documentation https://kno.wled.ge/interfaces/http-api/
-    for (let i = 1; i <= 2; i++) {
+    for (let i = 1; i <= this.presetsNb; i++) {
       this.platform.log.debug('Looking for preset ' + i);
       this.performRequestPreset({
         host: this.ip,
