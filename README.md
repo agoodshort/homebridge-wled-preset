@@ -12,3 +12,7 @@ This Plugin is designed to easily switch presets configured on your WLED applian
 In the Plugin section of your homebridge search for *Homebridge WLED Preset*
 
 ## To-Do
+- [ ] Get [verified](https://github.com/homebridge/verified)
+- [ ] Capability to add multiple accessories
+- [ ] Auto discovery of accessories
+- [ ] When starting homebridge ledstrips should stay on the same state (not turn on)
