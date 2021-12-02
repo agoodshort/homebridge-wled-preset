@@ -16,3 +16,4 @@ In the Plugin section of your homebridge search for *Homebridge WLED Preset*
 - [ ] Capability to add multiple accessories
 - [ ] Auto discovery of accessories
 - [ ] When starting homebridge ledstrips should stay on the same state (not turn on)
+- [ ] Can use hostname
