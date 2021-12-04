@@ -18,17 +18,27 @@ import { WledPresetAccessory } from './platformAccessory';
  */
 export class WledPresetPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
-  public readonly Characteristic: typeof Characteristic =
-    this.api.hap.Characteristic;
+  public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
+  private wleds: WledPresetAccessory[] = [];
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
-  constructor(
-    public readonly log: Logger,
-    public readonly config: PlatformConfig,
-    public readonly api: API,
-  ) {
+  constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
+
+    if (!this.config){
+      return;
+    }
+
+    if (!this.config.wleds) {
+      this.log.info('No WLEDs have been configured');
+    } else {
+      const wledsRecord = this.config.wleds as Record<string, Array<string>>;
+      for (const k in wledsRecord) {
+        this.log.info(wledsRecord[k]['name']);
+      }
+    }
+
     this.log.debug('Finished initializing platform:', this.config.name);
 
     // When this event is fired it means Homebridge has restored all cached accessories from disk.
@@ -59,23 +69,19 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
    * must not be registered again to prevent "duplicate UUID" errors.
    */
   discoverDevices() {
-    // EXAMPLE ONLY
-    // A real plugin you would discover accessories from the local network, cloud services
-    // or a user-defined array in the platform config.
-    const exampleDevices = [
-      {
-        displayName: this.config.name as string,
-        ip: this.config.ip as string,
-        presetsNb: this.config.presetsNb as number,
-      },
-      //   {
-      //     exampleUniqueId: 'EFGH',
-      //     exampleDisplayName: 'Kitchen',
-      //   },
-    ];
+    const wledsRecord = this.config.wleds as Record<string, Array<string>>;
+    const wledDevices: { displayName: string; ip: string; presetsNb: number }[] = [];
+    
+    for (const k in wledsRecord) {
+      wledDevices.push({
+        displayName: wledsRecord[k]['name'] as string,
+        ip: wledsRecord[k]['ip'] as string,
+        presetsNb: wledsRecord[k]['presetsNb'] as number,
+      });
+    }
 
     // loop over the discovered devices and register each one if it has not already been registered
-    for (const device of exampleDevices) {
+    for (const device of wledDevices) {
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
@@ -97,13 +103,14 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
 
           // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
           // existingAccessory.context.device = device;
-          // this.api.updatePlatformAccessories([existingAccessory]);
+          // this.api.updatePlatformAccessories([existingAccessory]); // To-Do: What does this do
 
           // create the accessory handler for the restored accessory
           // this is imported from `platformAccessory.ts`
           new WledPresetAccessory(
             this,
             existingAccessory,
+            device.displayName,
             device.ip,
             device.presetsNb,
           );
@@ -137,7 +144,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
 
         // create the accessory handler for the newly create accessory
         // this is imported from `platformAccessory.ts`
-        new WledPresetAccessory(this, accessory, device.ip, device.presetsNb);
+        new WledPresetAccessory(this, accessory, device.displayName, device.ip, device.presetsNb);
 
         // link the accessory to your platform
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [
@@ -147,3 +154,4 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     }
   }
 }
+

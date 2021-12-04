@@ -27,20 +27,27 @@ Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/h
 
 1. SSH or open a Terminal on your Homebridge host
 2. Run `npm install -g homebridge-wled-preset`
-3. Update your configuration file using the sample [below](#Configuration).
+3. Update your configuration file using the sample [below](#configuration).
 
 ## Configuration
-
-**At the moment, the plugin is unable to support multiple WLED accessories.**
 
 Configuration sample:
 
 ```json
 "platforms": [
     {
-        "name": "Office WLED",
-        "ip": "192.168.1.30",
-        "presetsNb": 5,
+        "wleds": [
+            {
+                "name": "Office Led Strip",
+                "ip": "192.168.1.30",
+                "presetsNb": 5
+            },
+            {
+                "name": "Bedroom Led Strip",
+                "ip": "192.168.1.31",
+                "presetsNb": 2
+            }
+        ],
         "platform": "WledPreset"
     }
 ]
@@ -48,8 +55,7 @@ Configuration sample:
 
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
-- [ ] Support multiple WLED accessories
 - [ ] Auto discovery of accessories
 - [ ] Can use hostname
-- [ ] Complete CHANGELOG.md and publish to version v0.3.0
-- [ ] Add more details in the configuration section
+- [ ] Add more details in the configuration (README, config.schema.json)
+- [ ] Can we use the brightness slider?
