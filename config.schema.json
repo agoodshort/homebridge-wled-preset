@@ -1,6 +1,9 @@
 {
   "pluginAlias": "WledPreset",
   "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "TO-DO",
+  "footerDisplay": "TO-DO",
   "schema": {
     "type": "object",
     "properties": {
