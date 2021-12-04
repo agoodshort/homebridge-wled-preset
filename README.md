@@ -20,14 +20,14 @@ Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/h
 
 1. Login to the [Homebridge UI](https://github.com/oznu/homebridge-config-ui-x) web interface by going to `http://homebridge.local` or `http://<ip address of your server>:8581` 
 2. In the *Plugin* tab, search for `Homebridge WLED Preset`
-3. Hit **INSTALL**
+3. Click **INSTALL**
 4. Once the installation is complete, open the **SETTINGS** of the plugin and fill out the required fields
 
 ### Through Command Line/SSH
 
 1. SSH or open a Terminal on your Homebridge host
 2. Run `npm install -g homebridge-wled-preset`
-3. Update your configuration file using the sample [below](README.md#Configuration).
+3. Update your configuration file using the sample [below](#Configuration).
 
 ## Configuration
 
