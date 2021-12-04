@@ -17,9 +17,7 @@ import { parseString } from 'xml2js';
  * Each accessory may expose multiple services of different service types.
  */
 export class WledPresetAccessory {
-  private service: Service;
   private presetService: Service;
-  private presetInUse: number | undefined;
 
   constructor(
     private readonly platform: WledPresetPlatform,
@@ -27,138 +25,50 @@ export class WledPresetAccessory {
     private readonly ip: string,
     private readonly presetsNb: number,
   ) {
-    // set accessory information
+    // Set accessory information
     this.accessory
       .getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'AirCookie')
       .setCharacteristic(this.platform.Characteristic.Model, 'WLED')
-      .setCharacteristic(
-        this.platform.Characteristic.SerialNumber,
-        'Default-Serial',
-      );
+      .setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial');
 
-    // get the LightBulb service if it exists, otherwise create a new LightBulb service
-    // you can create multiple services for each accessory
-    this.service =
-      this.accessory.getService(this.platform.Service.Lightbulb) ||
-      this.accessory.addService(this.platform.Service.Lightbulb);
+    /* ------------------------------------------------------------------------------------------------------------------------------- */
 
-    // set the service name, this is what is displayed as the default name on the Home app
-    // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-    this.service.setCharacteristic(
-      this.platform.Characteristic.Name,
-      accessory.context.device.displayName,
-    );
+    // Get the Television service if it exists, otherwise create a new Television service
+    this.presetService = 
+    this.accessory.getService(this.platform.Service.Television) || this.accessory.addService(this.platform.Service.Television);
 
-    // each service must implement at-minimum the "required characteristics" for the given service type
-    // see https://developers.homebridge.io/#/service/Lightbulb
+    /**
+     * Implementing Required Characteristics for Television
+     * see https://developers.homebridge.io/#/service/Television
+     */
 
-    // register handlers for the On/Off Characteristic
-    this.service
-      .getCharacteristic(this.platform.Characteristic.On)
+    // Register handlers for Active characteristic
+    this.presetService
+      .getCharacteristic(this.platform.Characteristic.Active)
       .on('set', this.setOn.bind(this)) // SET - bind to the `setOn` method below
       .on('get', this.getOn.bind(this)); // GET - bind to the `getOn` method below
 
-    // register handlers for the Brightness Characteristic
-    this.service
-      .getCharacteristic(this.platform.Characteristic.Brightness)
-      .on('set', this.setBrightness.bind(this)) // SET - bind to the 'setBrightness` method below
-      .on('get', this.getBrightness.bind(this)); // GET - bind to the 'GetBrightness` method below
-
-    // Preset Television
-    this.presetService =
-      this.accessory.getService(this.platform.Service.Television) ||
-      this.accessory.addService(this.platform.Service.Television);
-    this.presetService.setCharacteristic(
-      this.platform.Characteristic.ConfiguredName,
-      'Effects',
-    );
-
-    this.presetService.setCharacteristic(
-      this.platform.Characteristic.SleepDiscoveryMode,
-      this.platform.Characteristic.SleepDiscoveryMode.ALWAYS_DISCOVERABLE,
-    ); // Set sleep discovery characteristics
-
-    // handle on / off events using the Active characteristic
-    // Allows to turn on / off with the TV button
-    this.presetService
-      .getCharacteristic(this.platform.Characteristic.Active)
-      .on('set', (newValue, callback) => {
-        this.setOn(newValue, callback);
-      });
-
-    // Used to set for the first time starting
-    if (this.presetInUse === undefined) {
-      this.presetInUse = 1;
-    }
-    this.presetService.setCharacteristic(
-      this.platform.Characteristic.ActiveIdentifier,
-      this.presetInUse,
-    );
-
-    // handle input source changes
+    // Register handlers for Active Identifier Characteristic
     this.presetService
       .getCharacteristic(this.platform.Characteristic.ActiveIdentifier)
-      .on('set', (newValue, callback) => {
-        // the value will be the value you set for the Identifier Characteristic
-        // on the Input Source service that was selected - see input sources below.
+      .on('set', this.setActiveIdentifier.bind(this)) // SET - bind to the 'setActiveIdentifier` method below
+      .on('get', this.getActiveIdentifier.bind(this)); // GET - bind to the 'getActiveIdentifier` method below
 
-        this.performRequestPreset({
-          host: this.ip,
-          path: '/win&PL=' + newValue,
-          method: 'GET',
-        })
-          .then((response) => {
-            if (typeof response === 'string') {
-              const stringValue = response.replace(/\W/gi, '');
-              const value: number = +stringValue;
-              this.platform.log.debug(
-                'Trying to set Preset to -> ',
-                newValue.toString(),
-              );
-              this.platform.log.info('Preset is -> ', value.toString());
-              // const keys = Object.keys(presets) as Array<string>;
-              // // const keys = Object.keys(presets);
-              // this.platform.log.debug(keys[1]);
-              // this.platform.log.debug(keys[0]);
-              // for (const k in presets) {
-              //   const value = presets[k] as string;
-              //   this.platform.log.debug(value);
-              // }
-              this.presetInUse = value;
-              callback(null);
-            }
-          })
-          .catch((error) => {
-            callback(error);
-            this.platform.log.debug(error);
-          });
+    // Register Configured Name Characteristic
+    this.presetService.setCharacteristic(this.platform.Characteristic.ConfiguredName, accessory.context.device.displayName);
 
-        // this.platform.log.debug('set Active Identifier -> ' + newValue);
+    // Register Sleep Discovery Mode Characteristic
+    this.presetService.setCharacteristic(
+      this.platform.Characteristic.SleepDiscoveryMode, this.platform.Characteristic.SleepDiscoveryMode.NOT_DISCOVERABLE);
 
-        // this.performRequestPreset(
-        //   {
-        //     host: this.ip,
-        //     path: '/win&PL=' + (+!!newValue),
-        //     method: 'GET',
-        //   },
-        // )
-        //   .then(response => {
-        //     if (typeof response === 'string'){
-        //       callback(null);
-        //       this.platform.log.info('Trying to set Preset to -> ', newValue.toString());
-        //       this.platform.log.info('Set Preset response -> ', response.toString());
-        //     }
-        //   })
-        //   .catch(error => {
-        //     callback(error);
-        //     this.platform.log.debug(error);
-        //   });
-      });
+    /* ------------------------------------------------------------------------------------------------------------------------------- */
 
-    // Generate existing presets from the WLED interface as inputs
-    // If value returned from GET request is different than the one used, the preset ID does not exists
-    // The value cannot be higher than 250 based on documentation https://kno.wled.ge/interfaces/http-api/
+    /**
+     * Generate existing presets from the WLED interface as inputs
+     * If value returned from GET request is different than the one used, the preset ID does not exists
+     * The value cannot be higher than 250 based on documentation https://kno.wled.ge/interfaces/http-api/
+     */
     for (let i = 1; i <= this.presetsNb; i++) {
       this.platform.log.debug('Looking for preset ' + i);
       this.performRequestPreset({
@@ -170,34 +80,22 @@ export class WledPresetAccessory {
           if (typeof response === 'string') {
             const stringValue = response.replace(/\W/gi, '');
             const value: number = +stringValue;
+
             if (value === i) {
+              // TO-DO move to a method
               this.platform.log.debug('Creating preset ' + i);
               const serviceName: string = 'p' + i;
               const presetName: string = 'Preset ' + i;
+
               this['effectInputSource' + i] =
                 this.accessory.getService(serviceName) ||
-                this.accessory.addService(
-                  this.platform.Service.InputSource,
-                  serviceName,
-                  presetName,
-                );
+                this.accessory.addService(this.platform.Service.InputSource, serviceName, presetName);
               this['effectInputSource' + i]
                 .setCharacteristic(this.platform.Characteristic.Identifier, i)
-                .setCharacteristic(
-                  this.platform.Characteristic.ConfiguredName,
-                  presetName,
-                )
-                .setCharacteristic(
-                  this.platform.Characteristic.IsConfigured,
-                  this.platform.Characteristic.IsConfigured.CONFIGURED,
-                )
-                .setCharacteristic(
-                  this.platform.Characteristic.InputSourceType,
-                  this.platform.Characteristic.InputSourceType.HDMI,
-                );
-              this.presetService.addLinkedService(
-                this['effectInputSource' + i],
-              );
+                .setCharacteristic(this.platform.Characteristic.ConfiguredName, presetName)
+                .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+                .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+              this.presetService.addLinkedService(this['effectInputSource' + i]);
             } else {
               this.platform.log.debug('Preset ' + i + ' does not exists');
             }
@@ -207,44 +105,31 @@ export class WledPresetAccessory {
           this.platform.log.debug(error);
         });
     }
-
-    /**
-     * Updating characteristics values asynchronously.
-     *
-     * Example showing how to update the state of a Characteristic asynchronously instead
-     * of using the `on('get')` handlers.
-     * Here we change update the motion sensor trigger states on and off every 10 seconds
-     * the `updateCharacteristic` method.
-     *
-     */
-    // let motionDetected = false;
-    // setInterval(() => {
-    //   // EXAMPLE - inverse the trigger
-    //   motionDetected = !motionDetected;
-
-    //   // push the new value to HomeKit
-    //   motionSensorOneService.updateCharacteristic(this.platform.Characteristic.MotionDetected, motionDetected);
-    //   motionSensorTwoService.updateCharacteristic(this.platform.Characteristic.MotionDetected, !motionDetected);
-
-    //   this.platform.log.debug('Triggering motionSensorOneService:', motionDetected);
-    //   this.platform.log.debug('Triggering motionSensorTwoService:', !motionDetected);
-    // }, 10000);
   }
 
+  /* ------------------------------------------------------------------------------------------------------------------------------- */
+  /* METHODS */
+
   /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of an accessory, for example, turning on a Light bulb.
+   * Set handler for Active characteristic
+   * TO-DO: Detail steps taken by method
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
     this.performRequestBrightness({
       host: this.ip,
-      path: '/win&T=' + +!!value, // Why +!!
+      path: '/win&T=' + value, // Master Off/On/Toggle - https://kno.wled.ge/interfaces/http-api/#led-control
       method: 'GET',
     })
       .then((response) => {
         if (typeof response === 'string') {
+          if (response === '["0"]') {
+            this.platform.log.info('Turning off WLED');
+          } else {
+            this.platform.log.info('Turning on WLED');
+          }
+          this.platform.log.debug('Set on -> Sending GET request: ' + this.ip + '/win&T=' + value);
+          this.platform.log.debug('Set on -> response: ' + response);
           callback(null);
-          this.platform.log.info('Set on -> Brightness lvl: ', response);
         }
       })
       .catch((error) => {
@@ -254,17 +139,8 @@ export class WledPresetAccessory {
   }
 
   /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
-   * 
-   * GET requests should return as fast as possbile. A long delay here will result in
-   * HomeKit being unresponsive and a bad user experience in general.
-   * 
-   * If your device takes time to respond you should update the status of your device
-   * asynchronously instead using the `updateCharacteristic` method instead.
-
-   * @example
-   * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
+   * Get handler for Active characteristic
+   * TO-DO: Detail steps taken by method
    */
   getOn(callback: CharacteristicGetCallback) {
     this.performRequestBrightness({
@@ -274,12 +150,11 @@ export class WledPresetAccessory {
     })
       .then((response) => {
         if (typeof response === 'string') {
+          this.platform.log.debug('Get On -> Brightness:' + response);
           if (response === '["0"]') {
-            callback(null, false);
-            this.platform.log.debug('WLED is off');
+            callback(null, 0);
           } else {
-            callback(null, true);
-            this.platform.log.debug('WLED is on');
+            callback(null, 1);
           }
         }
       })
@@ -290,33 +165,11 @@ export class WledPresetAccessory {
   }
 
   /**
-   * Handle "SET" requests from HomeKit
-   * These are sent when the user changes the state of the accessory (i.e. changing the Brightness)
+   * Get handler for Active Identifier characteristic
+   * TO-DO: Detail steps taken by method
    */
-  setBrightness(
-    value: CharacteristicValue,
-    callback: CharacteristicSetCallback,
-  ) {
-    this.performRequestBrightness({
-      host: this.ip,
-      path: '/win&A=' + value,
-      method: 'GET',
-    })
-      .then(() => {
-        callback(null);
-        this.platform.log.info('Set Brightness -> ', value);
-      })
-      .catch((error) => {
-        callback(error);
-        this.platform.log.debug(error);
-      });
-  }
-
-  /**
-   * Handle "GET" requests from HomeKit for Brightness
-   */
-  getBrightness(callback: CharacteristicSetCallback) {
-    this.performRequestBrightness({
+  getActiveIdentifier(callback: CharacteristicSetCallback) {
+    this.performRequestPreset({
       host: this.ip,
       path: '/win',
       method: 'GET',
@@ -324,9 +177,43 @@ export class WledPresetAccessory {
       .then((response) => {
         if (typeof response === 'string') {
           const stringValue = response.replace(/\W/gi, '');
-          const value: number = +stringValue;
-          callback(null, (value / 255) * 100);
-          this.platform.log.debug('Brightness level is ->', value.toString());
+          const answerValue: number = +stringValue;
+          this.platform.log.info('Preset is set to ' + answerValue.toString());
+          callback(null, answerValue);
+        }
+      })
+      .catch((error) => {
+        callback(error);
+        this.platform.log.debug(error);
+      });
+  }
+   
+  /**
+   * Set handler for Active Identifier characteristic
+   * TO-DO: Detail steps taken by method
+   */
+  setActiveIdentifier(value: CharacteristicValue, callback: CharacteristicSetCallback) {
+    this.performRequestPreset({
+      host: this.ip,
+      path: '/win&PL=' + value, // Applies entire preset - https://kno.wled.ge/interfaces/http-api/#presets
+      method: 'GET',
+    })
+      .then((response) => {
+        if (typeof response === 'string') {
+          const stringValue = response.replace(/\W/gi, '');
+          const answerValue: number = +stringValue;
+          this.platform.log.debug('Set Active Identifier -> Trying to set Preset to: ' + value.toString());
+          this.platform.log.debug('Set Active Identifier -> Sending GET request: ' + this.ip + '/win&PL=' + value);
+          this.platform.log.info('Preset set to ' + answerValue.toString());
+          // const keys = Object.keys(presets) as Array<string>;
+          // // const keys = Object.keys(presets);
+          // this.platform.log.debug(keys[1]);
+          // this.platform.log.debug(keys[0]);
+          // for (const k in presets) {
+          //   const value = presets[k] as string;
+          //   this.platform.log.debug(value);
+          // }
+          callback(null);
         }
       })
       .catch((error) => {
@@ -335,11 +222,9 @@ export class WledPresetAccessory {
       });
   }
 
-  /**
-   * ======================================================================
-   * Request methods
-   * ======================================================================
-   */
+  /* ------------------------------------------------------------------------------------------------------------------------------- */
+  /* REQUEST METHODS */
+
   /**
    * Send a HTTP request and returns a promise with a JSON
    * workflow from: https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
