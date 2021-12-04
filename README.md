@@ -27,7 +27,7 @@ Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/h
 
 1. SSH or open a Terminal on your Homebridge host
 2. Run `npm install -g homebridge-wled-preset`
-3. Update your configuration file using the sample [below](#Configuration).
+3. Update your configuration file using the sample [below](#configuration).
 
 ## Configuration
 
