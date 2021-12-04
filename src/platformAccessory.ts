@@ -22,6 +22,7 @@ export class WledPresetAccessory {
   constructor(
     private readonly platform: WledPresetPlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly displayName: string,
     private readonly ip: string,
     private readonly presetsNb: number,
   ) {
@@ -59,7 +60,7 @@ export class WledPresetAccessory {
     this.presetService.setCharacteristic(this.platform.Characteristic.ConfiguredName, accessory.context.device.displayName);
 
     // Register Sleep Discovery Mode Characteristic
-    this.presetService.setCharacteristic(
+    this.presetService.setCharacteristic( // To-DO: Should I change the DISCOVERABLE?
       this.platform.Characteristic.SleepDiscoveryMode, this.platform.Characteristic.SleepDiscoveryMode.NOT_DISCOVERABLE);
 
     /* ------------------------------------------------------------------------------------------------------------------------------- */
@@ -70,7 +71,7 @@ export class WledPresetAccessory {
      * The value cannot be higher than 250 based on documentation https://kno.wled.ge/interfaces/http-api/
      */
     for (let i = 1; i <= this.presetsNb; i++) {
-      this.platform.log.debug('Looking for preset ' + i);
+      this.platform.log.debug(this.displayName + ': Looking for preset ' + i);
       this.performRequestPreset({
         host: this.ip,
         path: '/win&PL=' + i,
@@ -83,7 +84,7 @@ export class WledPresetAccessory {
 
             if (value === i) {
               // TO-DO move to a method
-              this.platform.log.debug('Creating preset ' + i);
+              this.platform.log.debug(this.displayName + ': Creating preset ' + i);
               const serviceName: string = 'p' + i;
               const presetName: string = 'Preset ' + i;
 
@@ -97,12 +98,12 @@ export class WledPresetAccessory {
                 .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
               this.presetService.addLinkedService(this['effectInputSource' + i]);
             } else {
-              this.platform.log.debug('Preset ' + i + ' does not exists');
+              this.platform.log.debug(this.displayName + ': Preset ' + i + ' does not exists');
             }
           }
         })
         .catch((error) => {
-          this.platform.log.debug(error);
+          this.platform.log.debug(this.displayName + error);
         });
     }
   }
@@ -123,18 +124,18 @@ export class WledPresetAccessory {
       .then((response) => {
         if (typeof response === 'string') {
           if (response === '["0"]') {
-            this.platform.log.info('Turning off WLED');
+            this.platform.log.info(this.displayName + ': Turning off');
           } else {
-            this.platform.log.info('Turning on WLED');
+            this.platform.log.info(this.displayName + ': Turning on');
           }
-          this.platform.log.debug('Set on -> Sending GET request: ' + this.ip + '/win&T=' + value);
-          this.platform.log.debug('Set on -> response: ' + response);
+          this.platform.log.debug(this.displayName + ': Set on -> Sending GET request: ' + this.ip + '/win&T=' + value);
+          this.platform.log.debug(this.displayName + ': Set on -> response: ' + response);
           callback(null);
         }
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(error);
+        this.platform.log.debug(this.displayName + error);
       });
   }
 
@@ -150,7 +151,7 @@ export class WledPresetAccessory {
     })
       .then((response) => {
         if (typeof response === 'string') {
-          this.platform.log.debug('Get On -> Brightness:' + response);
+          this.platform.log.debug(this.displayName + ': Get On -> Brightness:' + response);
           if (response === '["0"]') {
             callback(null, 0);
           } else {
@@ -160,7 +161,7 @@ export class WledPresetAccessory {
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(error);
+        this.platform.log.debug(this.displayName + error);
       });
   }
 
@@ -178,13 +179,13 @@ export class WledPresetAccessory {
         if (typeof response === 'string') {
           const stringValue = response.replace(/\W/gi, '');
           const answerValue: number = +stringValue;
-          this.platform.log.info('Preset is set to ' + answerValue.toString());
+          this.platform.log.info(this.displayName + ': Preset is set to ' + answerValue.toString());
           callback(null, answerValue);
         }
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(error);
+        this.platform.log.debug(this.displayName + error);
       });
   }
    
@@ -202,23 +203,15 @@ export class WledPresetAccessory {
         if (typeof response === 'string') {
           const stringValue = response.replace(/\W/gi, '');
           const answerValue: number = +stringValue;
-          this.platform.log.debug('Set Active Identifier -> Trying to set Preset to: ' + value.toString());
-          this.platform.log.debug('Set Active Identifier -> Sending GET request: ' + this.ip + '/win&PL=' + value);
-          this.platform.log.info('Preset set to ' + answerValue.toString());
-          // const keys = Object.keys(presets) as Array<string>;
-          // // const keys = Object.keys(presets);
-          // this.platform.log.debug(keys[1]);
-          // this.platform.log.debug(keys[0]);
-          // for (const k in presets) {
-          //   const value = presets[k] as string;
-          //   this.platform.log.debug(value);
-          // }
+          this.platform.log.debug(this.displayName + ': Set Active Identifier -> Trying to set Preset to: ' + value.toString());
+          this.platform.log.debug(this.displayName + ': Set Active Identifier -> Sending GET request: ' + this.ip + '/win&PL=' + value);
+          this.platform.log.info(this.displayName + ': Preset set to ' + answerValue.toString());
           callback(null);
         }
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(error);
+        this.platform.log.debug(this.displayName + error);
       });
   }
 

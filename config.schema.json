@@ -6,25 +6,34 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Name",
-        "type": "string",
-        "placeholder": "Enter a name for your WLED...",
-        "default": "WLED",
-        "required": true
-      },
-      "ip": {
-        "title": "IP",
-        "type": "string",
-        "placeholder": "Enter WLED IP address...",
-        "required": true
-      },
-      "presetsNb": {
-        "title": "Number of presets configured in your WLED interface",
-        "type": "number",
-        "placeholder": "Enter amount of presets...",
-        "default": "5",
-        "required": true
+      "wleds": {
+        "type": "array",
+        "title": "WLEDs",
+        "items": {
+          "type": "object",
+          "title": "WLED device",
+          "properties": {
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "default": "Led Strip",
+              "required": true
+            },
+            "ip": {
+              "title": "IP",
+              "type": "string",
+              "placeholder": "Enter IP...",
+              "required": true
+            },
+            "presetsNb": {
+              "title": "Number of presets configured",
+              "type": "number",
+              "placeholder": "Enter amount of presets",
+              "default": "5",
+              "required": true
+            }
+          }
+        }
       }
     }
   }
