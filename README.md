@@ -31,11 +31,25 @@ Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/h
 
 ## Configuration
 
+**At the moment, the plugin is unable to support multiple WLED accessories.**
+
+Configuration sample:
+
+```json
+"platforms": [
+    {
+        "name": "Office WLED",
+        "ip": "192.168.1.30",
+        "presetsNb": 5,
+        "platform": "WledPreset"
+    }
+]
+```
+
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
-- [ ] Capability to add multiple accessories
+- [ ] Support multiple WLED accessories
 - [ ] Auto discovery of accessories
-- [X] When starting homebridge ledstrips should stay on the same state (not turn on automatically)
 - [ ] Can use hostname
-- [X] Add get active identifier
 - [ ] Complete CHANGELOG.md and publish to version v0.3.0
+- [ ] Add more details in the configuration section
