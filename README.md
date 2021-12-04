@@ -48,9 +48,7 @@ Configuration sample:
 
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
-- [ ] Support multiple WLED accessories
 - [ ] Auto discovery of accessories
 - [ ] Can use hostname
-- [ ] Complete CHANGELOG.md and publish to version v0.3.0
-- [ ] Add more details in the configuration section
+- [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
