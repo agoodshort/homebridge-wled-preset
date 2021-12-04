@@ -53,3 +53,4 @@ Configuration sample:
 - [ ] Can use hostname
 - [ ] Complete CHANGELOG.md and publish to version v0.3.0
 - [ ] Add more details in the configuration section
+- [ ] Can we use the brightness slider?

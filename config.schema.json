@@ -2,8 +2,7 @@
   "pluginAlias": "WledPreset",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "TO-DO",
-  "footerDisplay": "TO-DO",
+  "headerDisplay": "Fill out required fields below and click \"SAVE\" to get started. See [README](https://github.com/goodshort/homebridge-wled-preset) for more information.",
   "schema": {
     "type": "object",
     "properties": {
