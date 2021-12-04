@@ -10,19 +10,20 @@
       "name": {
         "title": "Name",
         "type": "string",
+        "placeholder": "Enter a name for your WLED...",
         "default": "WLED",
         "required": true
       },
       "ip": {
         "title": "IP",
         "type": "string",
-        "placeholder": "Enter IP...",
+        "placeholder": "Enter WLED IP address...",
         "required": true
       },
       "presetsNb": {
-        "title": "Number of presets configured",
+        "title": "Number of presets configured in your WLED interface",
         "type": "number",
-        "placeholder": "Enter amount of presets",
+        "placeholder": "Enter amount of presets...",
         "default": "5",
         "required": true
       }
