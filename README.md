@@ -31,16 +31,23 @@ Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/h
 
 ## Configuration
 
-**At the moment, the plugin is unable to support multiple WLED accessories.**
-
 Configuration sample:
 
 ```json
 "platforms": [
     {
-        "name": "Office WLED",
-        "ip": "192.168.1.30",
-        "presetsNb": 5,
+        "wleds": [
+            {
+                "name": "Office Led Strip",
+                "ip": "192.168.1.30",
+                "presetsNb": 5
+            },
+            {
+                "name": "Bedroom Led Strip",
+                "ip": "192.168.1.31",
+                "presetsNb": 2
+            }
+        ],
         "platform": "WledPreset"
     }
 ]
