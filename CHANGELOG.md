@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Get handler for Active Identifier characteristic
 
 ### Changed
-- Fully reviewed and cleaned up [platformAccessory.ts](platformAccessory.ts)
+- Fully reviewed and cleaned up [platformAccessory.ts](src/platformAccessory.ts)
 - Plugin is now only using the Television Service Type
 
 ### Removed
