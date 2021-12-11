@@ -19,7 +19,6 @@ import { WledPresetAccessory } from './platformAccessory';
 export class WledPresetPlatform implements DynamicPlatformPlugin {
   public readonly Service: typeof Service = this.api.hap.Service;
   public readonly Characteristic: typeof Characteristic = this.api.hap.Characteristic;
-  private wleds: WledPresetAccessory[] = [];
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
@@ -48,7 +47,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
       // run the method to discover / register your devices as accessories
-      this.discoverDevices();
+      this.retrieveDevicesFromConfig();
     });
   }
 
@@ -63,12 +62,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     this.accessories.push(accessory);
   }
 
-  /**
-   * This is an example method showing how to register discovered accessories.
-   * Accessories must only be registered once, previously created accessories
-   * must not be registered again to prevent "duplicate UUID" errors.
-   */
-  discoverDevices() {
+  retrieveDevicesFromConfig() {
     const wledsRecord = this.config.wleds as Record<string, Array<string>>;
     const wledDevices: { displayName: string; ip: string; presetsNb: number }[] = [];
     
@@ -102,8 +96,8 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
           );
 
           // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-          // existingAccessory.context.device = device;
-          // this.api.updatePlatformAccessories([existingAccessory]); // To-Do: What does this do
+          existingAccessory.context.device = device;
+          this.api.updatePlatformAccessories([existingAccessory]); // To-Do: What does this do
 
           // create the accessory handler for the restored accessory
           // this is imported from `platformAccessory.ts`
