@@ -103,7 +103,7 @@ export class WledPresetAccessory {
           }
         })
         .catch((error) => {
-          this.platform.log.debug(this.displayName + error);
+          this.platform.log.error(this.displayName + ': ' + error); 
         });
     }
   }
@@ -135,7 +135,7 @@ export class WledPresetAccessory {
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(this.displayName + error);
+        this.platform.log.error(this.displayName + ': ' + error); 
       });
   }
 
@@ -161,7 +161,7 @@ export class WledPresetAccessory {
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(this.displayName + error);
+        this.platform.log.error(this.displayName + ': ' + error); 
       });
   }
 
@@ -185,7 +185,7 @@ export class WledPresetAccessory {
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(this.displayName + error);
+        this.platform.log.error(this.displayName + ': ' + error); 
       });
   }
    
@@ -211,7 +211,7 @@ export class WledPresetAccessory {
       })
       .catch((error) => {
         callback(error);
-        this.platform.log.debug(this.displayName + error);
+        this.platform.log.error(this.displayName + ': ' + error); 
       });
   }
 
@@ -222,6 +222,7 @@ export class WledPresetAccessory {
    * Send a HTTP request and returns a promise with a JSON
    * workflow from: https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
    * Response JSON mapping: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
+   * 
    * @param options parameters to use for the HTTP request
    *
    * @example
