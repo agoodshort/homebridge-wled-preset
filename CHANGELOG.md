@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2021-12-13
+### Added
+- Better cached accessories handling
+
+### Fixed
+- When a WLED device is not reachable, the plugin should ignore it
+
 ## [0.4.0] - 2021-12-03
 ### Added
 - Supports multiple WLED devices
@@ -21,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Users are now unable to create a second platform as it breaks the plugin 
 
 ### Fixed
-- Plugin does not turn on LED strip at Homebridge start up
+- Plugin does not turn on the WLED device at Homebridge start up
 
 ## [0.2.0] - 2021-12-03
 

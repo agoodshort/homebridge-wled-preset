@@ -53,9 +53,28 @@ Configuration sample:
 ]
 ```
 
+### Issues/Troubleshooting
+
+### Open issues
+
+If you face any issues with this plugin, please review [the open issues](https://github.com/goodshort/homebridge-wled-preset/issues).
+
+### Troubleshooting
+
+You might encounter issues with cached accessory or configuration not reloading, being updated properly. Feel free to mention this by [opening a new issue](https://github.com/goodshort/homebridge-wled-preset/issues/new/choose).
+
+You can remove cached accessories directly from the Homebirdge UI with the "Remove Single Cached Accessory" feature or by editing/deleting the `~/.homebridge/accessories` folder.
+
+### Opening a new issue
+
+If the steps above or [the open issues](https://github.com/goodshort/homebridge-wled-preset/issues) did not help you to fix your problem, feel free to [open a new issue](https://github.com/goodshort/homebridge-wled-preset/issues/new/choose) providing as much information as possible.
+
+
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
 - [ ] Auto discovery of accessories
-- [ ] Can use hostname
+- [ ] Possibility to use hostname (not only IP address)
+- [ ] Implement `node-fetch` on in [platformAccessory.ts](src/platformAccessory.ts)
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
+- [ ] Work on the [issues](https://github.com/goodshort/homebridge-wled-preset/issues)
