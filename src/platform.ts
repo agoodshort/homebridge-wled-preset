@@ -11,7 +11,7 @@ import {
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { WledPresetAccessory } from './platformAccessory';
 
-import fetch from 'node-fetch';
+import fetch from 'node-fetch'; // https://www.npmjs.com/package/node-fetch
 
 
 /**
@@ -90,7 +90,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     // loop over the retrieved devices and register each one if it has not already been registered
     for (const device of wledDevices) {
       this.log.debug('Making sure ' + device.displayName + ' is reachable...');
-      fetch('http://' + device.ip + '/win')
+      fetch('http://' + device.ip + '/win') // https://livecodestream.dev/post/5-ways-to-make-http-requests-in-javascript/#fetch
         .then(response => {
           if (!response.ok) {
             this.log.error('Request to ' + device.displayName + ' failed with status ${response.status}');
