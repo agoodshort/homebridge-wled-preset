@@ -56,6 +56,7 @@ Configuration sample:
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
 - [ ] Auto discovery of accessories
-- [ ] Can use hostname
+- [ ] Possibility to use hostname (not only IP address)
+- [ ] Implement `node-fetch` on in [platformAccessory.ts](src/platformAccessory.ts)
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
