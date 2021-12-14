@@ -67,8 +67,9 @@ You can remove cached accessories directly from the Homebirdge UI with the "Remo
 
 ### Opening a new issue
 
-If the steps above or [the open issues](https://github.com/goodshort/homebridge-wled-preset/issues) did not help you to fix your problem, feel free to [open a new issue](https://github.com/goodshort/homebridge-wled-preset/issues/new/choose) providing as much information as possible.
+If the troubleshooting steps above or [the open issues](https://github.com/goodshort/homebridge-wled-preset/issues) did not help you to fix your problem. Please review briefly the [closed issues](https://github.com/goodshort/homebridge-wled-preset/issues?q=is%3Aissue+is%3Aclosed) to see if your problem is mentioned of them. If it is, feel free to post a comment on it and I will reopen the issue or create a new one.
 
+Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebridge-wled-preset/issues/new/choose) providing as much information as possible to reproduce your situation/error message.
 
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
