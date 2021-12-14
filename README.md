@@ -79,3 +79,4 @@ Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebrid
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
 - [ ] Work on the [issues](https://github.com/goodshort/homebridge-wled-preset/issues)
+- [ ] Try to implement such [workflow](https://stackoverflow.com/a/39396977) for update
