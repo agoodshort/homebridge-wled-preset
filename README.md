@@ -39,7 +39,7 @@ Configuration sample:
         "wleds": [
             {
                 "name": "Office Led Strip",
-                "ip": "192.168.1.30",
+                "ip": "wled-office.local",
                 "presetsNb": 5
             },
             {
@@ -74,7 +74,6 @@ Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebrid
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
 - [ ] Auto discovery of accessories
-- [ ] Possibility to use hostname (not only IP address)
 - [ ] Implement `node-fetch` on in [platformAccessory.ts](src/platformAccessory.ts)
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
