@@ -6,7 +6,7 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/goodshort/homebridge-wled-preset.git"
+    "url": "https://github.com/goodshort/homebridge-wled-preset.git"
   },
   "bugs": {
     "url": "https://github.com/goodshort/homebridge-wled-preset/issues"
