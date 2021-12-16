@@ -14,6 +14,11 @@ This plugin is based on the [template Homebridge platform plugin](https://github
 
 Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/homebridge-simple-wled).
 
+### When ready to merge to master and publish to npmjs
+
+1. `npm version patch` will run the command `git checkout master && git merge development && git push` from [package.json](package.json)
+2. The push on master will trigger [build.yml](.github/workflows/build.yml) and then [publish.yml](.github/workflows/publish.yml)
+
 ## Installation
 
 ### With Homebridge Config UI X
