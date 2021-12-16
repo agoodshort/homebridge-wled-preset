@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge WLED Preset",
   "name": "homebridge-wled-preset",
-  "version": "0.5.1",
+  "version": "0.5.0",
   "description": "A Homebridge plugin controlling WLED presets",
   "license": "Apache-2.0",
   "repository": {
@@ -20,7 +20,9 @@
     "lint": "eslint src/**.ts --max-warnings=0",
     "watch": "npm run build && npm link && nodemon",
     "build": "rimraf ./dist && tsc",
-    "prepublishOnly": "npm run lint && npm run build"
+    "prepublishOnly": "npm run lint && npm run build",
+    "version": "",
+    "postversion": "git push && git checkout master"
   },
   "keywords": [
     "homebridge-plugin"
