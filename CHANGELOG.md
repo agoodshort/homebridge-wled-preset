@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.4] - UNRELEASED
+## [0.5.5] - UNRELEASED
 ### Fixed
 - Preventing showing up the commit message editor when merging using `npm version patch`
 - Fixed failed [publish action](https://github.com/goodshort/homebridge-wled-preset/actions/runs/1585543103) `The workflow is not valid. .github/workflows/publish.yml (Line: 10, Col: 3): The workflow must contain at least one job with no dependencies.`
@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.5.3] - 2021-12-16
 ### Added
 - Can use hostname in config file
-- Automation in [package.json](package.json) and [workflows](.github/workflows/)
+- Implemented merge and publishing of the package through automation in [package.json](package.json) and [workflows](.github/workflows/)
 
 ## [0.5.0] - 2021-12-13
 ### Added
