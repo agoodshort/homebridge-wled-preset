@@ -20,9 +20,9 @@
               "required": true
             },
             "ip": {
-              "title": "IP",
+              "title": "IP or hostname",
               "type": "string",
-              "placeholder": "Enter IP...",
+              "placeholder": "Enter IP or hostname...",
               "required": true
             },
             "presetsNb": {
