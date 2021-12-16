@@ -22,7 +22,7 @@
     "build": "rimraf ./dist && tsc",
     "prepublishOnly": "npm run lint && npm run build",
     "version": "",
-    "postversion": "git push && git checkout master"
+    "postversion": "git checkout master && git merge development && git push"
   },
   "keywords": [
     "homebridge-plugin"
