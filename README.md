@@ -1,3 +1,5 @@
+[![wakatime](https://wakatime.com/badge/github/goodshort/homebridge-wled-preset.svg)](https://wakatime.com/badge/github/goodshort/homebridge-wled-preset)
+
 # Homebridge WLED Preset Plugin
 
 <img src="https://github.com/goodshort/homebridge-wled-preset/blob/master/WIP.png" width="150">
