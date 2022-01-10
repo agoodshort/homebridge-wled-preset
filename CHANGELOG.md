@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.5] - UNRELEASED
 ### Fixed
-- Preventing showing up the commit message editor when merging using `npm version patch`
+- Preventing to show the commit message editor when merging using `npm version patch`
 - Fixed failed [publish action](https://github.com/goodshort/homebridge-wled-preset/actions/runs/1585543103) `The workflow is not valid. .github/workflows/publish.yml (Line: 10, Col: 3): The workflow must contain at least one job with no dependencies.`
 
 ## [0.5.4] - 2021-12-16
