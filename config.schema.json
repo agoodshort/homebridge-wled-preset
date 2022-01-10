@@ -6,9 +6,17 @@
   "schema": {
     "type": "object",
     "properties": {
+      "mDNS": {
+        "title": "Use autodiscovery (beta)",
+        "type": "boolean",
+        "description": "Use mDNS to add/remove WLEDs controllers as they appear/disapear on the network (runs constantly)"
+      },
       "wleds": {
         "type": "array",
         "title": "WLEDs",
+        "condition": {
+          "functionBody": "return model.mDNS === false;"
+        },
         "items": {
           "type": "object",
           "title": "WLED device",
@@ -20,10 +28,11 @@
               "required": true
             },
             "ip": {
-              "title": "IP or hostname",
+              "title": "IP Address / Hostname",
               "type": "string",
               "placeholder": "Enter IP or hostname...",
-              "required": true
+              "required": true,
+              "format": "hostname"
             },
             "presetsNb": {
               "title": "Number of presets configured",
