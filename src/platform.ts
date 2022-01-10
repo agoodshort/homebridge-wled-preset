@@ -12,6 +12,7 @@ import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { WledPresetAccessory } from './platformAccessory';
 
 import fetch from 'node-fetch'; // https://www.npmjs.com/package/node-fetch
+import mdns from 'mdns'; //https://www.npmjs.com/package/mdns
 
 
 /**
@@ -44,8 +45,15 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     // to start discovery of new accessories.
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
-      const wledDevices = this.retrieveDevicesFromConfig();
-      this.registerDevices(wledDevices);
+
+      if (this.config.mDNS === true) {
+        this.log.info('Using mDNS autodiscovery');
+        this.registerDevicesFromMDNS();
+      } else {
+        this.log.info('Using Config file to register devices');
+        const wledDevices = this.retrieveDevicesFromConfig();
+        this.registerDevices(wledDevices);
+      }
     });
   }
 
@@ -64,6 +72,8 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
 
   /**
    * Retrieve devices from the config.json file
+   * 
+   * @returns {Array} Array of WLED devices
    */
   retrieveDevicesFromConfig() {
     const wledsRecord = this.config.wleds as Record<string, Array<string>>;
@@ -81,13 +91,13 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Register an array of WLED devices as accessories in Homebridge
+   * Register an array of WLED devices as accessories in Homebridge.
    * 
-   * @param wledDevices array of WLED devices
+   * Loops over the retrieved devices, makes sure it is reachable and calls the `addAccessory()` method on the retrieve device
+   * 
+   * @param {Array} wledDevices - array of WLED devices
    */
   registerDevices(wledDevices: { displayName: string; ip: string; presetsNb: number }[]) {
-
-    // loop over the retrieved devices and register each one if it has not already been registered
     for (const device of wledDevices) {
       this.log.debug('Making sure ' + device.displayName + ' is reachable...');
       fetch('http://' + device.ip + '/win') // https://livecodestream.dev/post/5-ways-to-make-http-requests-in-javascript/#fetch
@@ -96,56 +106,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
             this.log.error('Request to ' + device.displayName + ' failed with status ${response.status}');
           } else {
             this.log.info(device.displayName + ' is reachable');
-
-            // generate a unique id for the accessory from IP address
-            const uuid = this.api.hap.uuid.generate(device.ip);
-
-            // see if an accessory with the same uuid has already been registered and restored from
-            // the cached devices we stored in the `configureAccessory` method above
-            const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
-
-            if (existingAccessory) {
-            // the accessory already exists
-              this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-
-              // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-              existingAccessory.context.device = device;
-              this.api.updatePlatformAccessories([existingAccessory]);
-
-              // create the accessory handler for the restored accessory
-              // this is imported from `platformAccessory.ts`
-              new WledPresetAccessory(
-                this,
-                existingAccessory,
-                device.displayName,
-                device.ip,
-                device.presetsNb,
-              );
-
-              // update accessory cache with any changes to the accessory details and information
-              this.api.updatePlatformAccessories([existingAccessory]);
-
-            } else {
-            // the accessory does not yet exist, so we need to create it
-              this.log.info('Adding new accessory:', device.displayName);
-
-              // create a new accessory
-              const accessory = new this.api.platformAccessory(
-                device.displayName,
-                uuid,
-              );
-
-              // store a copy of the device object in the `accessory.context`
-              // the `context` property can be used to store any data about the accessory you may need
-              accessory.context.device = device;
-
-              // create the accessory handler for the newly create accessory
-              // this is imported from `platformAccessory.ts`
-              new WledPresetAccessory(this, accessory, device.displayName, device.ip, device.presetsNb);
-
-              // link the accessory to your platform
-              this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
-            }
+            this.addAccessory(device);
           }
         })
         .catch(error => {
@@ -161,5 +122,83 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
         });
     }
   }
-}
 
+  /**
+   * Register one WLED device as accessory in Homebridge
+   * 
+   * @param device a WLED device
+   */
+  addAccessory(device){
+    // generate a unique id for the accessory from IP address
+    const uuid = this.api.hap.uuid.generate(device.ip);
+
+    // see if an accessory with the same uuid has already been registered and restored from
+    // the cached devices we stored in the `configureAccessory` method above
+    const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+
+    if (existingAccessory) {
+    // the accessory already exists
+      this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+
+      // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
+      existingAccessory.context.device = device;
+      this.api.updatePlatformAccessories([existingAccessory]);
+
+      // create the accessory handler for the restored accessory
+      // this is imported from `platformAccessory.ts`
+      new WledPresetAccessory(
+        this,
+        existingAccessory,
+        device.displayName,
+        device.ip,
+        device.presetsNb,
+      );
+
+      // update accessory cache with any changes to the accessory details and information
+      this.api.updatePlatformAccessories([existingAccessory]);
+
+    } else {
+    // the accessory does not yet exist, so we need to create it
+      this.log.info('Adding new accessory:', device.displayName);
+
+      // create a new accessory
+      const accessory = new this.api.platformAccessory(
+        device.displayName,
+        uuid,
+      );
+
+      // store a copy of the device object in the `accessory.context`
+      // the `context` property can be used to store any data about the accessory you may need
+      accessory.context.device = device;
+
+      // create the accessory handler for the newly create accessory
+      // this is imported from `platformAccessory.ts`
+      new WledPresetAccessory(this, accessory, device.displayName, device.ip, device.presetsNb);
+
+      // link the accessory to your platform
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+    }
+  }
+
+  /**
+   * Register Devices using mDNS/zerconf protocol
+   */
+  registerDevicesFromMDNS() {        
+    const browser = mdns.createBrowser(mdns.tcp('http'));
+
+    browser.on('serviceUp', service => {
+      this.log.debug('service up: ', service);
+      const device: { displayName: string; ip: string; presetsNb: number } = {
+        displayName: service.name,
+        ip: service.addresses.toString(),
+        presetsNb: 5, // TODO: Change that value
+      };
+      this.log.info('Discovered ' + device.displayName + ' at ' + device.ip);
+    });
+
+    browser.on('serviceDown', service => {
+      this.log.debug('service down: ', service);
+    });
+    browser.start();
+  }
+}
