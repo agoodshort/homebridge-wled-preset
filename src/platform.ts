@@ -46,13 +46,17 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     this.api.on('didFinishLaunching', () => {
       log.debug('Executed didFinishLaunching callback');
 
+      // Use mDNS autodiscovery or not
       if (this.config.mDNS === true) {
         this.log.info('Using mDNS autodiscovery');
-        this.registerDevicesFromMDNS();
+        this.discoverDevicesFromMDNS();
+
       } else {
         this.log.info('Using Config file to register devices');
         const wledDevices = this.retrieveDevicesFromConfig();
-        this.registerDevices(wledDevices);
+        for (const device of wledDevices) {
+          this.registerDevice(device);
+        }
       }
     });
   }
@@ -91,42 +95,42 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Register an array of WLED devices as accessories in Homebridge.
+   * Tests a WLED device and registers it as accessory in Homebridge if test is successful.
    * 
-   * Loops over the retrieved devices, makes sure it is reachable and calls the `addAccessory()` method on the retrieve device
+   * Makes sure it is reachable and calls the `addAccessory()` method on the device if it is.
+   * The test ensures the device is a WLED using an API call to the device.
    * 
-   * @param {Array} wledDevices - array of WLED devices
+   * @param {Array} device - a WLED device - Array of settings for the device
    */
-  registerDevices(wledDevices: { displayName: string; ip: string; presetsNb: number }[]) {
-    for (const device of wledDevices) {
-      this.log.debug('Making sure ' + device.displayName + ' is reachable...');
-      fetch('http://' + device.ip + '/win') // https://livecodestream.dev/post/5-ways-to-make-http-requests-in-javascript/#fetch
-        .then(response => {
-          if (!response.ok) {
-            this.log.error('Request to ' + device.displayName + ' failed with status ${response.status}');
-          } else {
-            this.log.info(device.displayName + ' is reachable');
-            this.addAccessory(device);
-          }
-        })
-        .catch(error => {
-          this.log.error(device.displayName + ': ' + error);
-          const uuid = this.api.hap.uuid.generate(device.ip);
-          const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+  registerDevice(device: { displayName: string; ip: string; presetsNb: number }) {
+    this.log.debug('Making sure ' + device.displayName + ' is reachable...');
+    fetch('http://' + device.ip + '/win') // https://livecodestream.dev/post/5-ways-to-make-http-requests-in-javascript/#fetch
+      .then(response => {
+        if (!response.ok) {
+          this.log.error('Request to ' + device.displayName + ' failed with status ${response.status}');
+        } else {
+          this.log.info(device.displayName + ' is a reachable WLED device');
+          this.addAccessory(device);
+        }
+      })
+      .catch(error => {
+        this.log.error(device.displayName + ': ' + error);
+        this.log.error(device.displayName + ' might not be a WLED device, ignoring it.');
+        const uuid = this.api.hap.uuid.generate(device.ip);
+        const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
 
-          // remove platform accessory when no longer present
-          if (existingAccessory) {
-            this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-            this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
-          }
-        });
-    }
+        // remove platform accessory when no longer present
+        if (existingAccessory) {
+          this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+          this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
+        }
+      });
   }
 
   /**
-   * Register one WLED device as accessory in Homebridge
+   * Register a WLED device as accessory in Homebridge
    * 
-   * @param device a WLED device
+   * @param {Array} device a WLED device - Array of settings for the device
    */
   addAccessory(device){
     // generate a unique id for the accessory from IP address
@@ -181,19 +185,25 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
   }
 
   /**
-   * Register Devices using mDNS/zerconf protocol
+   * Autodiscover WLED devices using mDNS/zeroconf and register them with the `registerDevice()` method
    */
-  registerDevicesFromMDNS() {        
+  discoverDevicesFromMDNS() {
+    const ipArray: string[] = []; // keeps track of IP addresses already registered to avoid trying to register the same device twice
     const browser = mdns.createBrowser(mdns.tcp('http'));
 
     browser.on('serviceUp', service => {
       this.log.debug('service up: ', service);
-      const device: { displayName: string; ip: string; presetsNb: number } = {
-        displayName: service.name,
-        ip: service.addresses.toString(),
-        presetsNb: 5, // TODO: Change that value
-      };
-      this.log.info('Discovered ' + device.displayName + ' at ' + device.ip);
+      const ipAddr = service.addresses.toString();
+      if (!ipArray.includes(ipAddr)) {
+        ipArray.push(ipAddr);
+        const device: { displayName: string; ip: string; presetsNb: number } = {
+          displayName: service.name,
+          ip: service.addresses.toString(),
+          presetsNb: 5, // TODO: Change that value
+        };
+        this.log.info('Discovered ' + device.displayName + ' at ' + device.ip);
+        this.registerDevice(device);
+      }
     });
 
     browser.on('serviceDown', service => {
