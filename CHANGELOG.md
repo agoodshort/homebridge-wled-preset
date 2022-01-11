@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Checkbox/boolean mDNS value in config file to use mDNS for autodiscovery of WLEDs devices
+- Use mDNS to discover devices on network constantly (not only at start-up)
 - [Wakatime](https://wakatime.com/) badge in [README.md](README.md)
 
 ### Fixed
