@@ -19,6 +19,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Install the required Debian package to use mDNS
+        # https://www.npmjs.com/package/mdns
+        run: sudo apt-get install libavahi-compat-libdnssd-dev
+
       - name: Install dependencies
         run: npm install
 
