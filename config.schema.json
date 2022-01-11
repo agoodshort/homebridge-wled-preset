@@ -9,7 +9,7 @@
       "mDNS": {
         "title": "Use autodiscovery (beta)",
         "type": "boolean",
-        "description": "Use mDNS to add/remove WLEDs controllers as they appear/disapear on the network (runs constantly)"
+        "description": "Use mDNS to add/remove WLEDs controllers as they appear/disapear on the network (runs constantly not only at start-up)"
       },
       "wleds": {
         "type": "array",
