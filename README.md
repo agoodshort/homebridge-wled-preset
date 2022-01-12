@@ -18,7 +18,18 @@ Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/h
 
 ### When ready to merge to master and publish to npmjs
 
-1. `npm version patch` will run the command `git checkout master && git merge development && git push` from [package.json](package.json)
+```bash
+# major update / breaking changes
+npm version major
+
+# minor update / new features
+npm version update
+
+# patch / bugfixes
+npm version patch
+```
+
+1. `npm version XXX` will run the command `git checkout master && git merge development && git push` from [package.json](package.json)
 2. The push on master will trigger [build.yml](.github/workflows/build.yml) and then [publish.yml](.github/workflows/publish.yml)
 
 ## Installation
@@ -60,11 +71,11 @@ Configuration sample:
 ]
 ```
 
-### Issues/Troubleshooting
+## Issues/Troubleshooting
 
-### Open issues
+### Review open issues
 
-If you face any issues with this plugin, please review [the open issues](https://github.com/goodshort/homebridge-wled-preset/issues).
+If you face any issues with the plugin, please review [the open issues](https://github.com/goodshort/homebridge-wled-preset/issues). Your issue might have already been mentioned by another user.
 
 ### Troubleshooting
 
@@ -80,9 +91,11 @@ Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebrid
 
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
-- [ ] Auto discovery of accessories
-- [ ] Implement `node-fetch` on in [platformAccessory.ts](src/platformAccessory.ts)
+- [ ] Finish mDNS discovery of accessories
+- [ ] Implement `node-fetch` in [platformAccessory.ts](src/platformAccessory.ts)
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
 - [ ] Work on the [issues](https://github.com/goodshort/homebridge-wled-preset/issues)
 - [ ] Discover the amount of presets
+- [ ] Amount of preset is hardcoded when using mDNS
+- [ ] Use MAC address instead of IP address as unique identifier
