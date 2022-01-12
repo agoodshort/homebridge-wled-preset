@@ -99,3 +99,4 @@ Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebrid
 - [ ] Discover the amount of presets
 - [ ] Amount of preset is hardcoded when using mDNS
 - [ ] Use MAC address instead of IP address as unique identifier
+- [ ] Does mDNS works constantly not only at start-up?
