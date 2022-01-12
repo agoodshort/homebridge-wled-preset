@@ -11,6 +11,13 @@ import { WledPresetPlatform } from './platform';
 import { request, RequestOptions } from 'http';
 import { parseString } from 'xml2js';
 
+import fetch from 'node-fetch'; // https://www.npmjs.com/package/node-fetch
+import { JSDOM } from 'jsdom';
+const { window } = new JSDOM( '' );
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const $ = require( 'jquery' )( window );
+
+
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -139,29 +146,54 @@ export class WledPresetAccessory {
       });
   }
 
+  // TODO: To remove
+  /**
+   * Get handler for Active characteristic
+   * TO-DO: Detail steps taken by method
+   */
+  // getOn(callback: CharacteristicGetCallback) {
+  //   this.performRequestBrightness({
+  //     host: this.ip,
+  //     path: '/win',
+  //     method: 'GET',
+  //   })
+  //     .then((response) => {
+  //       if (typeof response === 'string') {
+  //         this.platform.log.debug(this.displayName + ': Get On -> Brightness:' + response);
+  //         if (response === '["0"]') {
+  //           callback(null, 0);
+  //         } else {
+  //           callback(null, 1);
+  //         }
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       callback(error);
+  //       this.platform.log.error(this.displayName + ': ' + error); 
+  //     });
+  // }
+
   /**
    * Get handler for Active characteristic
    * TO-DO: Detail steps taken by method
    */
   getOn(callback: CharacteristicGetCallback) {
-    this.performRequestBrightness({
-      host: this.ip,
-      path: '/win',
-      method: 'GET',
-    })
-      .then((response) => {
-        if (typeof response === 'string') {
-          this.platform.log.debug(this.displayName + ': Get On -> Brightness:' + response);
-          if (response === '["0"]') {
-            callback(null, 0);
-          } else {
-            callback(null, 1);
-          }
+    fetch('http://' + this.ip + '/win')
+      .then(response => response.text())
+      .then(xmlString => $.parseXML(xmlString))
+      .then(data => {
+        const value = data.childNodes.item(0).childNodes.item(0).textContent;
+        const param = data.childNodes.item(0).childNodes.item(0).nodeName;
+        this.platform.log.debug(this.displayName + ': Get On -> Brightness: ' + value + ' (Param: ' + param + ')');
+        if (value > 0) {
+          callback(null, 1);
+        } else {
+          callback(null, 0);
         }
       })
-      .catch((error) => {
+      .catch(error => {
         callback(error);
-        this.platform.log.error(this.displayName + ': ' + error); 
+        this.platform.log.error(this.displayName + ': ' + error);
       });
   }
 
@@ -170,24 +202,45 @@ export class WledPresetAccessory {
    * TO-DO: Detail steps taken by method
    */
   getActiveIdentifier(callback: CharacteristicSetCallback) {
-    this.performRequestPreset({
-      host: this.ip,
-      path: '/win',
-      method: 'GET',
-    })
-      .then((response) => {
-        if (typeof response === 'string') {
-          const stringValue = response.replace(/\W/gi, '');
-          const answerValue: number = +stringValue;
-          this.platform.log.info(this.displayName + ': Preset is set to ' + answerValue.toString());
-          callback(null, answerValue);
-        }
+    fetch('http://' + this.ip + '/win') // https://stackoverflow.com/questions/37693982/how-to-fetch-xml-with-fetch-api
+      .then(response => response.text())
+      .then(xmlString => $.parseXML(xmlString))
+      .then(data => {
+        const value = data.childNodes.item(0).childNodes.item(19).textContent; // https://kno.wled.ge/interfaces/http-api/#xml-response
+        const param = data.childNodes.item(0).childNodes.item(19).nodeName;
+        this.platform.log.debug(this.displayName + ': Preset is set to ' + value + ' (Param: ' + param + ')');
+        callback(null, value);
       })
-      .catch((error) => {
+      .catch(error => {
         callback(error);
-        this.platform.log.error(this.displayName + ': ' + error); 
+        this.platform.log.error(this.displayName + ': ' + error);
       });
   }
+
+  // TODO: To remove
+  /**
+   * Get handler for Active Identifier characteristic
+   * TO-DO: Detail steps taken by method
+   */
+  // getActiveIdentifier(callback: CharacteristicSetCallback) {
+  //   this.performRequestPreset({
+  //     host: this.ip,
+  //     path: '/win',
+  //     method: 'GET',
+  //   })
+  //     .then((response) => {
+  //       if (typeof response === 'string') {
+  //         const stringValue = response.replace(/\W/gi, '');
+  //         const answerValue: number = +stringValue;
+  //         this.platform.log.info(this.displayName + ': Preset is set to ' + answerValue.toString());
+  //         callback(null, answerValue);
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       callback(error);
+  //       this.platform.log.error(this.displayName + ': ' + error); 
+  //     });
+  // }
    
   /**
    * Set handler for Active Identifier characteristic
