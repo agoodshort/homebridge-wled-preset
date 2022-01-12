@@ -191,9 +191,11 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     const ipArray: string[] = []; // keeps track of IP addresses already registered to avoid trying to register the same device twice
     const browser = mdns.createBrowser(mdns.tcp('http'));
 
+    // mDNS device coming up
     browser.on('serviceUp', service => {
       this.log.debug('service up: ', service);
       const ipAddr = service.addresses.toString();
+
       if (!ipArray.includes(ipAddr)) {
         ipArray.push(ipAddr);
         const device: { displayName: string; ip: string; presetsNb: number } = {
@@ -206,6 +208,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
       }
     });
 
+    // mDNS device went down
     browser.on('serviceDown', service => {
       this.log.debug('service down: ', service);
     });
