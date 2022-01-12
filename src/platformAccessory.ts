@@ -8,15 +8,11 @@ import {
 
 import { WledPresetPlatform } from './platform';
 
-import { request, RequestOptions } from 'http';
-import { parseString } from 'xml2js';
-
 import fetch from 'node-fetch'; // https://www.npmjs.com/package/node-fetch
 import { JSDOM } from 'jsdom';
 const { window } = new JSDOM( '' );
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const $ = require( 'jquery' )( window );
-
 
 /**
  * Platform Accessory
@@ -79,41 +75,41 @@ export class WledPresetAccessory {
      */
     for (let i = 1; i <= this.presetsNb; i++) {
       this.platform.log.debug(this.displayName + ': Looking for preset ' + i);
-      this.performRequestPreset({
-        host: this.ip,
-        path: '/win&PL=' + i,
-        method: 'GET',
-      })
-        .then((response) => {
-          if (typeof response === 'string') {
-            const stringValue = response.replace(/\W/gi, '');
-            const value: number = +stringValue;
+      fetch('http://' + this.ip + '/win&PL=' + i)
+        .then(response => response.text())
+        .then(xmlString => $.parseXML(xmlString))
+        .then(data => {
+          const responseValue = data.childNodes.item(0).childNodes.item(19).textContent; // Current Preset
+          const responseParam = data.childNodes.item(0).childNodes.item(19).nodeName;
+          this.platform.log.debug(this.displayName + ': Preset is set to ' + responseValue + ' (Param: ' + responseParam + ')');
 
-            if (value === i) {
-              // TO-DO move to a method
-              this.platform.log.debug(this.displayName + ': Creating preset ' + i);
-              const serviceName: string = 'p' + i;
-              const presetName: string = 'Preset ' + i;
+          if (Number(responseValue) === i) {
+            // TO-DO move to a method
+            this.platform.log.debug(this.displayName + ': Creating preset ' + i);
+            const serviceName: string = 'p' + i;
+            const presetName: string = 'Preset ' + i;
 
-              this['effectInputSource' + i] =
-                this.accessory.getService(serviceName) ||
-                this.accessory.addService(this.platform.Service.InputSource, serviceName, presetName);
-              this['effectInputSource' + i]
-                .setCharacteristic(this.platform.Characteristic.Identifier, i)
-                .setCharacteristic(this.platform.Characteristic.ConfiguredName, presetName)
-                .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
-                .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
-              this.presetService.addLinkedService(this['effectInputSource' + i]);
-            } else {
-              this.platform.log.debug(this.displayName + ': Preset ' + i + ' does not exists');
-            }
+            this['effectInputSource' + i] =
+              this.accessory.getService(serviceName) ||
+              this.accessory.addService(this.platform.Service.InputSource, serviceName, presetName);
+            this['effectInputSource' + i]
+              .setCharacteristic(this.platform.Characteristic.Identifier, i)
+              .setCharacteristic(this.platform.Characteristic.ConfiguredName, presetName)
+              .setCharacteristic(this.platform.Characteristic.IsConfigured, this.platform.Characteristic.IsConfigured.CONFIGURED)
+              .setCharacteristic(this.platform.Characteristic.InputSourceType, this.platform.Characteristic.InputSourceType.HDMI);
+            this.presetService.addLinkedService(this['effectInputSource' + i]);
+          } else {
+            this.platform.log.debug(this.displayName + ': Preset ' + i + ' does not exists');
           }
         })
-        .catch((error) => {
-          this.platform.log.error(this.displayName + ': ' + error); 
+        .catch(error => {
+          this.platform.log.error(this.displayName + ': ' + error);
         });
     }
+
   }
+
+  
 
   /* ------------------------------------------------------------------------------------------------------------------------------- */
   /* METHODS */
@@ -123,55 +119,26 @@ export class WledPresetAccessory {
    * TO-DO: Detail steps taken by method
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.performRequestBrightness({
-      host: this.ip,
-      path: '/win&T=' + value, // Master Off/On/Toggle - https://kno.wled.ge/interfaces/http-api/#led-control
-      method: 'GET',
-    })
-      .then((response) => {
-        if (typeof response === 'string') {
-          if (response === '["0"]') {
-            this.platform.log.info(this.displayName + ': Turning off');
-          } else {
-            this.platform.log.info(this.displayName + ': Turning on');
-          }
-          this.platform.log.debug(this.displayName + ': Set on -> Sending GET request: ' + this.ip + '/win&T=' + value);
-          this.platform.log.debug(this.displayName + ': Set on -> response: ' + response);
-          callback(null);
+    fetch('http://' + this.ip + '/win&T=' + value)
+      .then(response => response.text())
+      .then(xmlString => $.parseXML(xmlString))
+      .then(data => {
+        const responseValue = data.childNodes.item(0).childNodes.item(0).textContent; // Master Brightness
+        const responseParam = data.childNodes.item(0).childNodes.item(0).nodeName;
+        this.platform.log.debug(this.displayName + ': Set on -> Sending GET request: ' + this.ip + '/win&T=' + value);
+        this.platform.log.debug(this.displayName + ': Set On -> response: ' + responseValue + ' (Param: ' + responseParam + ')');
+        if (responseValue > 0) {
+          this.platform.log.info(this.displayName + ': Turning on');
+        } else {
+          this.platform.log.info(this.displayName + ': Turning off');
         }
+        callback(null);
       })
-      .catch((error) => {
+      .catch(error => {
         callback(error);
-        this.platform.log.error(this.displayName + ': ' + error); 
+        this.platform.log.error(this.displayName + ': ' + error);
       });
   }
-
-  // TODO: To remove
-  /**
-   * Get handler for Active characteristic
-   * TO-DO: Detail steps taken by method
-   */
-  // getOn(callback: CharacteristicGetCallback) {
-  //   this.performRequestBrightness({
-  //     host: this.ip,
-  //     path: '/win',
-  //     method: 'GET',
-  //   })
-  //     .then((response) => {
-  //       if (typeof response === 'string') {
-  //         this.platform.log.debug(this.displayName + ': Get On -> Brightness:' + response);
-  //         if (response === '["0"]') {
-  //           callback(null, 0);
-  //         } else {
-  //           callback(null, 1);
-  //         }
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       callback(error);
-  //       this.platform.log.error(this.displayName + ': ' + error); 
-  //     });
-  // }
 
   /**
    * Get handler for Active characteristic
@@ -182,10 +149,10 @@ export class WledPresetAccessory {
       .then(response => response.text())
       .then(xmlString => $.parseXML(xmlString))
       .then(data => {
-        const value = data.childNodes.item(0).childNodes.item(0).textContent;
-        const param = data.childNodes.item(0).childNodes.item(0).nodeName;
-        this.platform.log.debug(this.displayName + ': Get On -> Brightness: ' + value + ' (Param: ' + param + ')');
-        if (value > 0) {
+        const responseValue = data.childNodes.item(0).childNodes.item(0).textContent;
+        const responseParam = data.childNodes.item(0).childNodes.item(0).nodeName;
+        this.platform.log.debug(this.displayName + ': Get On -> Brightness: ' + responseValue + ' (Param: ' + responseParam + ')');
+        if (responseValue > 0) {
           callback(null, 1);
         } else {
           callback(null, 0);
@@ -206,10 +173,11 @@ export class WledPresetAccessory {
       .then(response => response.text())
       .then(xmlString => $.parseXML(xmlString))
       .then(data => {
-        const value = data.childNodes.item(0).childNodes.item(19).textContent; // https://kno.wled.ge/interfaces/http-api/#xml-response
-        const param = data.childNodes.item(0).childNodes.item(19).nodeName;
-        this.platform.log.debug(this.displayName + ': Preset is set to ' + value + ' (Param: ' + param + ')');
-        callback(null, value);
+        // https://kno.wled.ge/interfaces/http-api/#xml-response
+        const responseValue = data.childNodes.item(0).childNodes.item(19).textContent; // Current Preset
+        const responseParam = data.childNodes.item(0).childNodes.item(19).nodeName;
+        this.platform.log.debug(this.displayName + ': Preset is set to ' + responseValue + ' (Param: ' + responseParam + ')');
+        callback(null, Number(responseValue));
       })
       .catch(error => {
         callback(error);
@@ -217,134 +185,28 @@ export class WledPresetAccessory {
       });
   }
 
-  // TODO: To remove
-  /**
-   * Get handler for Active Identifier characteristic
-   * TO-DO: Detail steps taken by method
-   */
-  // getActiveIdentifier(callback: CharacteristicSetCallback) {
-  //   this.performRequestPreset({
-  //     host: this.ip,
-  //     path: '/win',
-  //     method: 'GET',
-  //   })
-  //     .then((response) => {
-  //       if (typeof response === 'string') {
-  //         const stringValue = response.replace(/\W/gi, '');
-  //         const answerValue: number = +stringValue;
-  //         this.platform.log.info(this.displayName + ': Preset is set to ' + answerValue.toString());
-  //         callback(null, answerValue);
-  //       }
-  //     })
-  //     .catch((error) => {
-  //       callback(error);
-  //       this.platform.log.error(this.displayName + ': ' + error); 
-  //     });
-  // }
-   
   /**
    * Set handler for Active Identifier characteristic
    * TO-DO: Detail steps taken by method
    */
   setActiveIdentifier(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    this.performRequestPreset({
-      host: this.ip,
-      path: '/win&PL=' + value, // Applies entire preset - https://kno.wled.ge/interfaces/http-api/#presets
-      method: 'GET',
-    })
-      .then((response) => {
-        if (typeof response === 'string') {
-          const stringValue = response.replace(/\W/gi, '');
-          const answerValue: number = +stringValue;
-          this.platform.log.debug(this.displayName + ': Set Active Identifier -> Trying to set Preset to: ' + value.toString());
-          this.platform.log.debug(this.displayName + ': Set Active Identifier -> Sending GET request: ' + this.ip + '/win&PL=' + value);
-          this.platform.log.info(this.displayName + ': Preset set to ' + answerValue.toString());
-          callback(null);
-        }
+    fetch('http://' + this.ip + '/win&PL=' + value) // https://stackoverflow.com/questions/37693982/how-to-fetch-xml-with-fetch-api
+      .then(response => response.text())
+      .then(xmlString => $.parseXML(xmlString))
+      .then(data => {
+        // https://kno.wled.ge/interfaces/http-api/#xml-response
+        const responseValue = data.childNodes.item(0).childNodes.item(19).textContent;
+        const responseParam = data.childNodes.item(0).childNodes.item(19).nodeName;
+        this.platform.log.debug(this.displayName + ': Set Active Identifier -> Trying to set Preset to: ' + value.toString());
+        this.platform.log.debug(this.displayName + ': Set Active Identifier -> Sending GET request: ' + this.ip + '/win&PL=' + value);
+        this.platform.log.debug(this.displayName 
+          + ': Set Active Identifier -> response: ' + responseValue + ' (Param: ' + responseParam + ')');
+        this.platform.log.info(this.displayName + ': Preset set to ' + responseValue.toString());
+        callback(null);
       })
-      .catch((error) => {
+      .catch(error => {
         callback(error);
-        this.platform.log.error(this.displayName + ': ' + error); 
+        this.platform.log.error(this.displayName + ': ' + error);
       });
-  }
-
-  /* ------------------------------------------------------------------------------------------------------------------------------- */
-  /* REQUEST METHODS */
-
-  /**
-   * Send a HTTP request and returns a promise with a JSON
-   * workflow from: https://wanago.io/2019/03/18/node-js-typescript-6-sending-http-requests-understanding-multipart-form-data/
-   * Response JSON mapping: https://github.com/Aircoookie/WLED/wiki/HTTP-request-API
-   * 
-   * @param options parameters to use for the HTTP request
-   *
-   * @example
-   *  performRequest(
-   *    {
-   *      host: 'jsonplaceholder.typicode.com',
-   *      path: '/todos1',
-   *      method: 'GET',
-   *     },
-   *     )
-   *     .then(response => {
-   *       this.platform.log.debug(response);
-   *     })
-   *     .catch(error => {
-   *       this.platform.log.debug(error);
-   *     });
-   */
-
-  performRequestBrightness(options: RequestOptions) {
-    return new Promise((resolve, reject) => {
-      request(options, (response) => {
-        const { statusCode } = response;
-        if (statusCode) {
-          if (statusCode >= 300) {
-            reject(new Error(response.statusMessage));
-          }
-        }
-        const chunks: Uint8Array[] = [];
-        response.on('data', (chunk) => {
-          chunks.push(chunk);
-        });
-        response.on('end', () => {
-          const resultXML = Buffer.concat(chunks).toString();
-          parseString(resultXML, (err, result) => {
-            if (err) {
-              throw err;
-            }
-            const json = JSON.stringify(result.vs.ac);
-            resolve(json);
-          });
-        });
-      }).end();
-    });
-  }
-
-  performRequestPreset(options: RequestOptions) {
-    return new Promise((resolve, reject) => {
-      request(options, (response) => {
-        const { statusCode } = response;
-        if (statusCode) {
-          if (statusCode >= 300) {
-            reject(new Error(response.statusMessage));
-          }
-        }
-        const chunks: Uint8Array[] = [];
-        response.on('data', (chunk) => {
-          chunks.push(chunk);
-        });
-        response.on('end', () => {
-          const resultXML = Buffer.concat(chunks).toString();
-          parseString(resultXML, (err, result) => {
-            if (err) {
-              throw err;
-            }
-            const json = JSON.stringify(result.vs.ps);
-            resolve(json);
-          });
-        });
-      }).end();
-    });
   }
 }
