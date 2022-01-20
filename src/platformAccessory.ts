@@ -106,10 +106,7 @@ export class WledPresetAccessory {
           this.platform.log.error(this.displayName + ': ' + error);
         });
     }
-
   }
-
-  
 
   /* ------------------------------------------------------------------------------------------------------------------------------- */
   /* METHODS */
@@ -119,7 +116,7 @@ export class WledPresetAccessory {
    * TO-DO: Detail steps taken by method
    */
   setOn(value: CharacteristicValue, callback: CharacteristicSetCallback) {
-    fetch('http://' + this.ip + '/win&T=' + value)
+    fetch('http://' + this.ip + '/win&PL=1&T=' + value) // TODO: set default preset
       .then(response => response.text())
       .then(xmlString => $.parseXML(xmlString))
       .then(data => {
@@ -169,15 +166,18 @@ export class WledPresetAccessory {
    * TO-DO: Detail steps taken by method
    */
   getActiveIdentifier(callback: CharacteristicSetCallback) {
-    fetch('http://' + this.ip + '/win') // https://stackoverflow.com/questions/37693982/how-to-fetch-xml-with-fetch-api
+    fetch('http://' + this.ip + '/win')
       .then(response => response.text())
       .then(xmlString => $.parseXML(xmlString))
       .then(data => {
-        // https://kno.wled.ge/interfaces/http-api/#xml-response
         const responseValue = data.childNodes.item(0).childNodes.item(19).textContent; // Current Preset
         const responseParam = data.childNodes.item(0).childNodes.item(19).nodeName;
         this.platform.log.debug(this.displayName + ': Preset is set to ' + responseValue + ' (Param: ' + responseParam + ')');
-        callback(null, Number(responseValue));
+        if (Number(responseValue) === 0) {
+          fetch('http://' + this.ip + '/win&PL=1'); // TODO: set default preset
+          this.platform.log.debug(this.displayName + ': Preset was 0, changed it to 1');
+        }
+        callback(null, responseValue);
       })
       .catch(error => {
         callback(error);
@@ -195,7 +195,7 @@ export class WledPresetAccessory {
       .then(xmlString => $.parseXML(xmlString))
       .then(data => {
         // https://kno.wled.ge/interfaces/http-api/#xml-response
-        const responseValue = data.childNodes.item(0).childNodes.item(19).textContent;
+        const responseValue = data.childNodes.item(0).childNodes.item(19).textContent; // Current Preset
         const responseParam = data.childNodes.item(0).childNodes.item(19).nodeName;
         this.platform.log.debug(this.displayName + ': Set Active Identifier -> Trying to set Preset to: ' + value.toString());
         this.platform.log.debug(this.displayName + ': Set Active Identifier -> Sending GET request: ' + this.ip + '/win&PL=' + value);
