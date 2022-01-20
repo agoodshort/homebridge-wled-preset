@@ -92,7 +92,6 @@ Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebrid
 ## To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
 - [ ] Finish mDNS discovery of accessories
-- [ ] Implement `node-fetch` in [platformAccessory.ts](src/platformAccessory.ts)
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
 - [ ] Work on the [issues](https://github.com/goodshort/homebridge-wled-preset/issues)
@@ -100,3 +99,4 @@ Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebrid
 - [ ] Amount of preset is hardcoded when using mDNS
 - [ ] Use MAC address instead of IP address as unique identifier
 - [ ] Does mDNS works constantly not only at start-up?
+- [ ] Let user define a defaut preset?

@@ -6,15 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0] - UNRELEASED
 ### Added
-- Checkbox/boolean mDNS value in config file to use mDNS for autodiscovery of WLEDs devices
-- New functionality to use mDNS to discover devices on network
+- New functionality using mDNS to discover devices on network.
+A Checkbox (boolean value) mDNS in config was added to autodiscover WLEDs devices
+- Implemented a default preset (hardcoded preset #1 at the moment) when turning on LEDs (by default preset is set to 0 when switching on WLED, this caused issues with the selector wheel)
 - [Wakatime](https://wakatime.com/) badge in [README.md](README.md)
 
 ### Fixed
+- When an accessory is not reachable, the plugin will throw an error but won't crash Homebridge anymore [issue #10](https://github.com/goodshort/homebridge-wled-preset/issues/10).
+This was fixed by using exclusively `node-fetch` across the plugin to reach out to the WLED APIs.
 - Preventing to show the commit message editor when merging using `npm version patch`
 - Fixed failed [publish action](https://github.com/goodshort/homebridge-wled-preset/actions/runs/1585543103) `The workflow is not valid. .github/workflows/publish.yml (Line: 10, Col: 3): The workflow must contain at least one job with no dependencies.`
 - Fixed failed [Build and Lint action](https://github.com/goodshort/homebridge-wled-preset/actions/runs/1684441191) where Debian package `libavahi-compat-libdnssd-dev` was missing in [build.yml](.github/workflows/build.yml) and [publish.yml](.github/workflows/publish.yml)
-- When an accessory is not reachable, the plugin will throw an error but won't crash Homebridge [issue #10](https://github.com/goodshort/homebridge-wled-preset/issues/10)
 
 ## [0.5.4] - 2021-12-16
 ### Changed
