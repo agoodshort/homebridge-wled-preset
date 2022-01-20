@@ -11,6 +11,9 @@ A Checkbox (boolean value) mDNS in config was added to autodiscover WLEDs device
 - Implemented a default preset (hardcoded preset #1 at the moment) when turning on LEDs (by default preset is set to 0 when switching on WLED, this caused issues with the selector wheel)
 - [Wakatime](https://wakatime.com/) badge in [README.md](README.md)
 
+### Changed
+- When starting a WLED device, the default preset is 0 (i.e. but colours are from the last preset displayed before being turned off). There is no way for the plugin to know which preset is used after a off/on. So I decided to display at each power on a default preset (i.e. at the moment it is #1). Please let me know through [issues](https://github.com/goodshort/homebridge-wled-preset/issues) if you would like this to be done differently.
+
 ### Fixed
 - When an accessory is not reachable, the plugin will throw an error but won't crash Homebridge anymore [issue #10](https://github.com/goodshort/homebridge-wled-preset/issues/10).
 This was fixed by using exclusively `node-fetch` across the plugin to reach out to the WLED APIs.
