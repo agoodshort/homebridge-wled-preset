@@ -201,7 +201,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
         const device: { displayName: string; ip: string; presetsNb: number } = {
           displayName: service.name,
           ip: service.addresses.toString(),
-          presetsNb: 5, // TODO: Change that value
+          presetsNb: this.config.mDNSpresetsNb as number,
         };
         this.log.info('Discovered ' + device.displayName + ' at ' + device.ip);
         this.registerDevice(device);

@@ -11,6 +11,15 @@
         "type": "boolean",
         "description": "Use mDNS to add/remove WLEDs controllers as they appear/disapear on the network (runs constantly not only at start-up)"
       },
+      "mDNSpresetsNb": {
+        "title": "Max number of presets configured on your WLEDs",
+        "type": "number",
+        "placeholder": "Highest amout of presets on a single WLED device",
+        "required": true,
+        "condition": {
+          "functionBody": "return model.mDNS === true;"
+        }
+      },
       "wleds": {
         "type": "array",
         "title": "WLEDs",
@@ -37,8 +46,7 @@
             "presetsNb": {
               "title": "Number of presets configured",
               "type": "number",
-              "placeholder": "Enter amount of presets",
-              "default": "5",
+              "placeholder": "Enter amount of presets for this WLED device",
               "required": true
             }
           }

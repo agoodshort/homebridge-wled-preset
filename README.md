@@ -8,29 +8,9 @@
 
 This Plugin is designed to easily switch presets configured on your WLED appliances through HomeKit.
 
-## Development
+### Expected behaviour
 
-This is a plugin to easily switch between the different presets you have on your WLED. Development is happening on [development branch](https://github.com/goodshort/homebridge-wled-preset/tree/development).
-
-This plugin is based on the [template Homebridge platform plugin](https://github.com/homebridge/homebridge-plugin-template/) and the [accessory example](https://github.com/homebridge/homebridge-examples/tree/master/accessory-example-typescript).
-
-Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/homebridge-simple-wled).
-
-### When ready to merge to master and publish to npmjs
-
-```bash
-# major update / breaking changes
-npm version major
-
-# minor update / new features
-npm version update
-
-# patch / bugfixes
-npm version patch
-```
-
-1. `npm version XXX` will run the command `git checkout master && git merge development && git push` from [package.json](package.json)
-2. The push on master will trigger [build.yml](.github/workflows/build.yml) and then [publish.yml](.github/workflows/publish.yml)
+TODO
 
 ## Installation
 
@@ -89,14 +69,37 @@ If the troubleshooting steps above or [the open issues](https://github.com/goods
 
 Otherwise, feel free to [open a new issue](https://github.com/goodshort/homebridge-wled-preset/issues/new/choose) providing as much information as possible to reproduce your situation/error message.
 
-## To-Do
+## Development
+
+Development is happening on [development branch](https://github.com/goodshort/homebridge-wled-preset/tree/development).
+
+This plugin is based on the [template Homebridge platform plugin](https://github.com/homebridge/homebridge-plugin-template/) and the [accessory example](https://github.com/homebridge/homebridge-examples/tree/master/accessory-example-typescript).
+
+Got some inspiration from [Homebridge Simple WLED](https://github.com/jstrausd/homebridge-simple-wled).
+
+### When ready to merge to master and publish to npmjs
+
+```bash
+# major update / breaking changes
+npm version major
+
+# minor update / new features
+npm version update
+
+# patch / bugfixes
+npm version patch
+```
+
+1. `npm version XXX` will run the command `git checkout master && git merge development && git push` from [package.json](package.json)
+2. The push on master will trigger [build.yml](.github/workflows/build.yml) and then [publish.yml](.github/workflows/publish.yml)
+
+### To-Do
 - [ ] Get [verified](https://github.com/homebridge/verified)
 - [ ] Finish mDNS discovery of accessories
 - [ ] Add more details in the configuration (README, config.schema.json)
 - [ ] Can we use the brightness slider?
 - [ ] Work on the [issues](https://github.com/goodshort/homebridge-wled-preset/issues)
 - [ ] Discover the amount of presets
-- [ ] Amount of preset is hardcoded when using mDNS
 - [ ] Use MAC address instead of IP address as unique identifier
 - [ ] Does mDNS works constantly not only at start-up?
 - [ ] Let user define a defaut preset?
