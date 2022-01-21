@@ -12,7 +12,7 @@ A Checkbox (boolean value) mDNS in config was added to autodiscover WLEDs device
 - [Wakatime](https://wakatime.com/) badge in [README.md](README.md)
 
 ### Changed
-- When starting a WLED device, the default preset is 0 (i.e. but colours are from the last preset displayed before being turned off). There is no way for the plugin to know which preset is used after a off/on. So I decided to display at each power on a default preset (i.e. at the moment it is #1). Please let me know through [issues](https://github.com/goodshort/homebridge-wled-preset/issues) if you would like this to be done differently.
+- When starting a WLED device, the default preset displayed will always be the preset #1. This is not a definitve behaviour and I need your opinion on this. Please let me know your thoughts [here](https://github.com/goodshort/homebridge-wled-preset/issues/12).
 
 ### Fixed
 - When an accessory is not reachable, the plugin will throw an error but won't crash Homebridge anymore [issue #10](https://github.com/goodshort/homebridge-wled-preset/issues/10).
