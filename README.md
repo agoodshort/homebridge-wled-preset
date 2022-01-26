@@ -100,6 +100,6 @@ npm version patch
 - [ ] Can we use the brightness slider?
 - [ ] Work on the [issues](https://github.com/goodshort/homebridge-wled-preset/issues)
 - [ ] Discover the amount of presets
-- [ ] Use MAC address instead of IP address as unique identifier
+- [ ] Use MAC address instead of IP address as unique identifier. Need to look at [this](https://github.com/Aircoookie/WLED/issues/305)
 - [ ] Does mDNS works constantly not only at start-up?
 - [ ] Let user define a defaut preset?
