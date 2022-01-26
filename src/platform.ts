@@ -27,6 +27,10 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
 
+  // Keeps track of IP addresses already registered to avoid trying to register the same device twice
+  public ipArray: string[] = [];
+
+
   constructor(public readonly log: Logger, public readonly config: PlatformConfig, public readonly api: API) {
 
     if (!this.config){
@@ -115,15 +119,8 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
       })
       .catch(error => {
         this.log.error(device.displayName + ': ' + error);
-        this.log.error(device.displayName + ' might not be a WLED device, ignoring it.');
-        const uuid = this.api.hap.uuid.generate(device.ip);
-        const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
-
-        // remove platform accessory when no longer present
-        if (existingAccessory) {
-          this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-          this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
-        }
+        this.log.info(device.displayName + ' might not be a WLED device, ignoring it.');
+        this.removeAccessory(device);
       });
   }
 
@@ -132,7 +129,7 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
    * 
    * @param {Array} device a WLED device - Array of settings for the device
    */
-  addAccessory(device){
+  addAccessory(device: { displayName: string; ip: string; presetsNb: number }){
     // generate a unique id for the accessory from IP address
     const uuid = this.api.hap.uuid.generate(device.ip);
 
@@ -185,10 +182,28 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
   }
 
   /**
+   * Removes a WLED device from Homebridge's cache
+   * 
+   * @param {Array} device a WLED device - Array of settings for the device
+   */
+  removeAccessory(device: { displayName: string; ip: string; presetsNb: number }){
+    const uuid = this.api.hap.uuid.generate(device.ip);
+    const existingAccessory = this.accessories.find((accessory) => accessory.UUID === uuid);
+    this.log.info('Looking for cached accessory with uuid: ' + device.ip);
+  
+    // remove platform accessory when no longer present
+    if (existingAccessory) {
+      this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
+      this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
+    } else {
+      this.log.info('No action required. No accessory matched uuid: ' + device.ip);
+    }
+  }
+
+  /**
    * Autodiscover WLED devices using mDNS/zeroconf and register them with the `registerDevice()` method
    */
   discoverDevicesFromMDNS() {
-    const ipArray: string[] = []; // keeps track of IP addresses already registered to avoid trying to register the same device twice
     const browser = mdns.createBrowser(mdns.tcp('http'));
 
     // mDNS device coming up
@@ -196,8 +211,8 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
       this.log.debug('service up: ', service);
       const ipAddr = service.addresses.toString();
 
-      if (!ipArray.includes(ipAddr)) {
-        ipArray.push(ipAddr);
+      if (!this.ipArray.includes(ipAddr)) {
+        this.ipArray.push(ipAddr);
         const device: { displayName: string; ip: string; presetsNb: number } = {
           displayName: service.name,
           ip: service.addresses.toString(),
@@ -211,7 +226,35 @@ export class WledPresetPlatform implements DynamicPlatformPlugin {
     // mDNS device went down
     browser.on('serviceDown', service => {
       this.log.debug('service down: ', service);
+      // const ipAddr = service.addresses.toString();
+
+      // if (ipArray.includes(ipAddr)){
+      //   this.removeElementFromStringArray(ipAddr, ipArray);
+      //   const device: { displayName: string; ip: string; presetsNb: number } = {
+      //     displayName: service.name,
+      //     ip: service.addresses.toString(),
+      //     presetsNb: this.config.mDNSpresetsNb as number,
+      //   };
+      //   this.removeAccessory(device);
+      // }
     });
+
+    // start mDNS discovery
     browser.start();
+  }
+
+  /**
+   * Handy method to easily remove an existing element from an array.
+   * 
+   * Reference: https://www.angularjswiki.com/angular/how-to-remove-an-element-from-array-in-angular-or-typescript/
+   * 
+   * @param {string} ipAddr - The IP address to remove from the array
+   */
+  removeIpAddrFromIpArray(ipAddr: string){
+    this.ipArray.forEach((value, index) => {
+      if(value === ipAddr) {
+        this.ipArray.splice(index, 1);
+      }
+    });
   }
 }
