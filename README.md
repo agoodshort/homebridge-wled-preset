@@ -103,3 +103,19 @@ npm version patch
 - [ ] Use MAC address instead of IP address as unique identifier. Need to look at [this](https://github.com/Aircoookie/WLED/issues/305)
 - [ ] Does mDNS works constantly not only at start-up?
 - [ ] Let user define a defaut preset?
+- [ ] Use the ipArray with objects and store the name of the device in it as the service down displays name of device. Look up can be done on `browser.on('ServiceDown')`
+```
+service down:  {
+  interfaceIndex: 7,
+  type: ServiceType {
+    name: 'http',
+    protocol: 'tcp',
+    subtypes: [],
+    fullyQualified: true
+  },
+  replyDomain: 'local.',
+  flags: 1,
+  name: 'wled-office',
+  networkInterface: 'en1'
+}
+```
