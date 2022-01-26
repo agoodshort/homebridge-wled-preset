@@ -28,6 +28,7 @@ export class WledPresetAccessory {
     private readonly displayName: string,
     private readonly ip: string,
     private readonly presetsNb: number,
+    private removeAccessoryInitiated: boolean = false,
   ) {
     // Set accessory information
     this.accessory
@@ -158,6 +159,7 @@ export class WledPresetAccessory {
       .catch(error => {
         callback(error);
         this.platform.log.error(this.displayName + ': ' + error);
+        this.evaluateAccessoryRemoval(error);
       });
   }
 
@@ -182,6 +184,7 @@ export class WledPresetAccessory {
       .catch(error => {
         callback(error);
         this.platform.log.error(this.displayName + ': ' + error);
+        this.evaluateAccessoryRemoval(error);
       });
   }
 
@@ -208,5 +211,24 @@ export class WledPresetAccessory {
         callback(error);
         this.platform.log.error(this.displayName + ': ' + error);
       });
+  }
+
+  /**
+   * Evaluates if the accessory erroring out needs to be removed or not based on the error message received
+   * 
+   * @param error - catched error
+   */
+  evaluateAccessoryRemoval(error){
+    if (error.toString().includes('ETIMEDOUT') && !this.removeAccessoryInitiated) {
+      this.removeAccessoryInitiated = true;
+      const device: { displayName: string; ip: string; presetsNb: number } = {
+        displayName: this.displayName,
+        ip: this.ip,
+        presetsNb: this.presetsNb,
+      };
+      this.platform.log.info(this.displayName + ': TIMEOUT error occured -> removing accessory');
+      this.platform.removeAccessory(device);
+      this.platform.removeIpAddrFromIpArray(device.ip);
+    }
   }
 }
