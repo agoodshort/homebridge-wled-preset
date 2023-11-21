@@ -1,4 +1,4 @@
-[![wakatime](https://wakatime.com/badge/github/goodshort/homebridge-wled-preset.svg)](https://wakatime.com/badge/github/goodshort/homebridge-wled-preset)
+![npm](https://img.shields.io/npm/dw/homebridge-wled-preset?logo=npm)
 
 # Homebridge WLED Preset Plugin
 
